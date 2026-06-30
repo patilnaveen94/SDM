@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { businessInfo, webNavItems } from '../../../shared/assetsConfig';
+import { businessInfo, webNavItems } from '../assetsConfig';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { eventPackages, rentalCatalog, RentalGear } from '../../../shared/assetsConfig';
+import { eventPackages, rentalCatalog, RentalGear } from '../assetsConfig';
 
 type TabKey = 'events' | 'rental';
 

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { businessInfo, heroAssets } from '../../../shared/assetsConfig';
+import { businessInfo, heroAssets } from '../assetsConfig';
 
 export const Hero: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);

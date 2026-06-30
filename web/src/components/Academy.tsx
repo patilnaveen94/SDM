@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { academyCourses } from '../../../shared/assetsConfig';
+import { academyCourses } from '../assetsConfig';
 
 interface QueryFormData {
   studentName: string;

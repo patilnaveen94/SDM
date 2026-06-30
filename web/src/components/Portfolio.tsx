@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { portfolioItems, PortfolioCategory } from '../../../shared/assetsConfig';
+import { portfolioItems, PortfolioCategory } from '../assetsConfig';
 
 const categories: { label: string; value: PortfolioCategory }[] = [
   { label: 'All', value: 'all' },
