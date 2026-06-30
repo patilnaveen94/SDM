@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx craco build",
+  "buildCommand": "react-scripts build",
   "outputDirectory": "build",
   "installCommand": "npm install"
 }
