@@ -1,95 +1,143 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { businessInfo } from '../assetsConfig';
 
+/** Animated counter component (OnePlus-style stat animation) */
+const AnimatedCounter: React.FC<{ value: number; suffix?: string; label: string }> = ({ value, suffix = '', label }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true });
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    let start = 0;
+    const duration = 2000;
+    const increment = value / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= value) {
+        setCount(value);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [isInView, value]);
+
+  return (
+    <div ref={ref} className="text-center">
+      <div className="text-4xl md:text-6xl font-heading font-bold text-gold-gradient">
+        {count}{suffix}
+      </div>
+      <div className="text-sm text-gray-400 mt-2 uppercase tracking-wider">{label}</div>
+    </div>
+  );
+};
+
 export const About: React.FC = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(sectionRef, { once: true, margin: '-100px' });
+  const imageRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { once: true, margin: '-15%' });
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start end', 'end start'],
   });
 
-  // Parallax on the image
-  const imageY = useTransform(scrollYProgress, [0, 1], ['-10%', '10%']);
-  const imageScale = useTransform(scrollYProgress, [0, 0.5], [1.1, 1]);
+  const imageScale = useTransform(scrollYProgress, [0, 0.5], [0.85, 1]);
+  const imageRotate = useTransform(scrollYProgress, [0, 0.5], [-2, 0]);
+  const parallaxY = useTransform(scrollYProgress, [0, 1], ['5%', '-5%']);
 
   return (
-    <section id="about" ref={sectionRef} className="scroll-mt-20 py-20 md:py-32 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+    <section id="about" ref={sectionRef} className="scroll-mt-20 relative overflow-hidden">
+      {/* Full-width cinematic stats bar (OnePlus KSP style) */}
+      <div className="py-20 md:py-28 border-b border-border-subtle">
+        <div className="max-w-6xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
+          <AnimatedCounter value={10} suffix="+" label="Years Experience" />
+          <AnimatedCounter value={500} suffix="+" label="Events Captured" />
+          <AnimatedCounter value={200} suffix="+" label="Students Trained" />
+          <AnimatedCounter value={50} suffix="+" label="Gear Collection" />
+        </div>
+      </div>
+
+      {/* Main About Content */}
+      <div className="py-24 md:py-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Label */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          initial={{ opacity: 0, x: -30 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="mb-6"
         >
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-heading font-bold text-white">
-            Meet the <span className="text-gold-gradient">Visionary</span>
-          </h2>
-          <div className="w-20 h-1 bg-gold mx-auto rounded-full mt-6" />
+          <span className="text-gold text-xs font-bold uppercase tracking-[4px]">About the Founder</span>
         </motion.div>
 
-        {/* Two-column layout: Image + Content */}
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left: Cinematic Image with parallax */}
+        {/* Big Title */}
+        <motion.h2
+          initial={{ opacity: 0, y: 40 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold leading-[1.1] max-w-4xl"
+        >
+          The Vision Behind <br/>
+          <span className="text-gold-gradient">Every Frame.</span>
+        </motion.h2>
+
+        {/* Two-col layout */}
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 mt-16 items-center">
+          {/* Image with parallax + scale */}
           <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.9, delay: 0.2 }}
+            ref={imageRef}
+            style={{ scale: imageScale, rotate: imageRotate }}
             className="relative"
           >
-            <div className="relative rounded-2xl overflow-hidden aspect-[3/4] max-h-[600px]">
+            <div className="relative rounded-3xl overflow-hidden aspect-[4/5]">
               <motion.img
                 src={businessInfo.founder.profileImage}
                 alt={businessInfo.founder.name}
                 className="w-full h-full object-cover"
-                style={{ y: imageY, scale: imageScale }}
+                style={{ y: parallaxY }}
               />
-              {/* Cinematic gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-obsidian/60 via-transparent to-obsidian/20" />
+              {/* Gradient overlay at bottom */}
+              <div className="absolute inset-0 bg-gradient-to-t from-obsidian/50 via-transparent to-transparent" />
             </div>
 
-            {/* Floating accent card */}
+            {/* Floating name badge (OnePlus style floating elements) */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.6 }}
-              className="absolute -bottom-6 -right-4 md:right-6 bg-card-surface/90 backdrop-blur-md border border-border-subtle rounded-xl p-4 shadow-2xl"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="absolute -bottom-6 left-6 right-6 bg-dark-surface/90 backdrop-blur-xl border border-border-subtle rounded-2xl p-5"
             >
-              <p className="text-gold font-heading font-bold text-lg">{businessInfo.founder.name}</p>
-              <p className="text-gray-400 text-xs mt-1">{businessInfo.founder.title}</p>
+              <div className="text-xl font-heading font-bold text-white">{businessInfo.founder.name}</div>
+              <div className="text-sm text-gold mt-1">{businessInfo.founder.title}</div>
             </motion.div>
-
-            {/* Decorative gold border accent */}
-            <div className="absolute -top-3 -left-3 w-24 h-24 border-l-2 border-t-2 border-gold/40 rounded-tl-2xl" />
-            <div className="absolute -bottom-3 -right-3 w-24 h-24 border-r-2 border-b-2 border-gold/40 rounded-br-2xl" />
           </motion.div>
 
-          {/* Right: Bio + Credentials */}
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.9, delay: 0.3 }}
-            className="space-y-6"
-          >
-            <p className="text-base md:text-lg text-gray-300 leading-relaxed">
+          {/* Text content with staggered reveals */}
+          <div className="space-y-8 lg:pt-10">
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="text-lg md:text-xl text-gray-300 leading-relaxed"
+            >
               {businessInfo.founder.bio}
-            </p>
+            </motion.p>
 
-            {/* Credentials list */}
-            <div className="space-y-3 pt-2">
+            {/* Credentials with horizontal reveal lines (OnePlus spec-style) */}
+            <div className="space-y-4 pt-4">
               {businessInfo.founder.credentials.map((credential, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 40 }}
                   animate={isInView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ delay: 0.4 + i * 0.1 }}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-card-surface/50 border border-border-subtle hover:border-gold/30 transition-colors group"
+                  transition={{ delay: 0.4 + i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-center gap-4 group"
                 >
-                  <span className="text-gold text-sm flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform">✦</span>
-                  <span className="text-sm text-gray-300 leading-snug">{credential}</span>
+                  <div className="w-8 h-px bg-gold group-hover:w-12 transition-all duration-500" />
+                  <span className="text-sm text-gray-300 group-hover:text-white transition-colors duration-300">{credential}</span>
                 </motion.div>
               ))}
             </div>
@@ -98,24 +146,18 @@ export const About: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.8 }}
-              className="pt-4 flex flex-wrap gap-4"
+              transition={{ delay: 1 }}
+              className="pt-6 flex flex-wrap gap-4"
             >
               <a
                 href={`tel:${businessInfo.phone}`}
-                className="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-gold text-obsidian font-bold hover:bg-gold-light transition-colors"
+                className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gold text-obsidian font-bold text-base hover:shadow-lg hover:shadow-gold/20 transition-all duration-500"
               >
-                <span>📞</span>
-                Connect Now
-              </a>
-              <a
-                href="#portfolio"
-                className="inline-flex items-center gap-2 px-7 py-3 rounded-full border-2 border-gold/60 text-gold font-semibold hover:bg-gold hover:text-obsidian transition-all"
-              >
-                View Work →
+                <span>Connect Now</span>
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
               </a>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
