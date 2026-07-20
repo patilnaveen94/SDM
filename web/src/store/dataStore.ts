@@ -1,7 +1,6 @@
 /**
  * LocalStorage-backed data store for SDM Camera & Solutions.
  * Manages: Gear inventory, Orders (rentals + event bookings), Updates/Feed.
- * Easily replaceable with Firebase/Supabase by swapping these functions.
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -20,25 +19,32 @@ export interface GearItem {
   currentlyRented: number;
 }
 
+export interface OrderItem {
+  gearId: string;
+  gearName: string;
+  quantity: number;
+  dailyRate: number;
+}
+
 export interface Order {
   id: string;
   type: 'rental' | 'event_booking';
   customerName: string;
   customerPhone: string;
   customerEmail: string;
-  // Rental specific
-  items?: { gearId: string; gearName: string; days: number; dailyRate: number }[];
-  // Event specific
+  items: OrderItem[];
   eventType?: string;
-  eventDate?: string;
   eventDetails?: string;
-  // Common
   totalAmount: number;
-  status: 'pending' | 'confirmed' | 'active' | 'returned' | 'completed' | 'cancelled';
+  status: 'active' | 'returned_pending_payment' | 'overdue' | 'settled';
+  paymentStatus: 'pending' | 'paid';
   createdAt: string;
-  startDate?: string;
-  endDate?: string;
+  startDate: string;
+  endDate: string;
+  days: number;
   notes?: string;
+  returnedAt?: string;
+  settledAt?: string;
 }
 
 export interface UpdatePost {
@@ -79,10 +85,25 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
+export function calculateDays(startDate: string, endDate: string): number {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(diff, 1);
+}
+
+export function calculateOrderTotal(items: OrderItem[], days: number): number {
+  return items.reduce((sum, item) => sum + item.dailyRate * item.quantity * days, 0);
+}
+
 // ─── Gear CRUD ───────────────────────────────────────────────────────────────
 
 export function getGearInventory(): GearItem[] {
   return getItem<GearItem>(KEYS.GEAR, []);
+}
+
+export function getAvailableGear(): GearItem[] {
+  return getGearInventory().filter(g => g.available && (g.totalStock - g.currentlyRented) > 0);
 }
 
 export function addGearItem(item: Omit<GearItem, 'id'>): GearItem {
@@ -110,37 +131,105 @@ export function deleteGearItem(id: string): boolean {
   return true;
 }
 
+/** Increase currentlyRented count for items when order is created */
+function rentOutItems(items: OrderItem[]): void {
+  const all = getGearInventory();
+  items.forEach(orderItem => {
+    const idx = all.findIndex(g => g.id === orderItem.gearId);
+    if (idx !== -1) {
+      all[idx].currentlyRented += orderItem.quantity;
+      if (all[idx].currentlyRented >= all[idx].totalStock) {
+        all[idx].available = false;
+      }
+    }
+  });
+  setItem(KEYS.GEAR, all);
+}
+
+/** Decrease currentlyRented count when items are returned */
+function returnItems(items: OrderItem[]): void {
+  const all = getGearInventory();
+  items.forEach(orderItem => {
+    const idx = all.findIndex(g => g.id === orderItem.gearId);
+    if (idx !== -1) {
+      all[idx].currentlyRented = Math.max(0, all[idx].currentlyRented - orderItem.quantity);
+      if (all[idx].currentlyRented < all[idx].totalStock) {
+        all[idx].available = true;
+      }
+    }
+  });
+  setItem(KEYS.GEAR, all);
+}
+
 // ─── Orders CRUD ─────────────────────────────────────────────────────────────
 
 export function getOrders(): Order[] {
   return getItem<Order>(KEYS.ORDERS, []);
 }
 
-export function getUpcomingOrders(): Order[] {
-  const now = new Date().toISOString();
-  return getOrders().filter(o => 
-    (o.status === 'pending' || o.status === 'confirmed') && 
-    (o.startDate ? o.startDate >= now.split('T')[0] : true)
-  ).sort((a, b) => (a.startDate || a.createdAt).localeCompare(b.startDate || b.createdAt));
-}
-
 export function getActiveOrders(): Order[] {
   return getOrders().filter(o => o.status === 'active');
 }
 
-export function addOrder(order: Omit<Order, 'id' | 'createdAt'>): Order {
-  const newOrder = { ...order, id: generateId(), createdAt: new Date().toISOString() };
+export function getOverdueOrders(): Order[] {
+  const today = new Date().toISOString().split('T')[0];
+  return getOrders().filter(o => o.status === 'active' && o.endDate < today);
+}
+
+export function getPendingPaymentOrders(): Order[] {
+  return getOrders().filter(o => o.status === 'returned_pending_payment');
+}
+
+export function getSettledOrders(): Order[] {
+  return getOrders().filter(o => o.status === 'settled');
+}
+
+/** Create order — status starts as 'active', gear counts auto-update */
+export function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'status' | 'paymentStatus' | 'totalAmount' | 'days'>): Order {
+  const days = calculateDays(order.startDate, order.endDate);
+  const totalAmount = calculateOrderTotal(order.items, days);
+  const newOrder: Order = {
+    ...order,
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+    status: 'active',
+    paymentStatus: 'pending',
+    totalAmount,
+    days,
+  };
   const all = getOrders();
   all.push(newOrder);
   setItem(KEYS.ORDERS, all);
+  // Auto-update gear stock
+  if (order.type === 'rental') {
+    rentOutItems(order.items);
+  }
   return newOrder;
 }
 
-export function updateOrderStatus(id: string, status: Order['status'], notes?: string): Order | null {
+/** Mark items as received back — moves to returned_pending_payment */
+export function markItemsReturned(orderId: string): Order | null {
   const all = getOrders();
-  const idx = all.findIndex(o => o.id === id);
+  const idx = all.findIndex(o => o.id === orderId);
   if (idx === -1) return null;
-  all[idx] = { ...all[idx], status, ...(notes ? { notes } : {}) };
+  all[idx].status = 'returned_pending_payment';
+  all[idx].returnedAt = new Date().toISOString();
+  setItem(KEYS.ORDERS, all);
+  // Return items to inventory
+  if (all[idx].type === 'rental') {
+    returnItems(all[idx].items);
+  }
+  return all[idx];
+}
+
+/** Mark order as fully settled (payment received) */
+export function settleOrder(orderId: string): Order | null {
+  const all = getOrders();
+  const idx = all.findIndex(o => o.id === orderId);
+  if (idx === -1) return null;
+  all[idx].status = 'settled';
+  all[idx].paymentStatus = 'paid';
+  all[idx].settledAt = new Date().toISOString();
   setItem(KEYS.ORDERS, all);
   return all[idx];
 }
