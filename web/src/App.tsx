@@ -1,23 +1,30 @@
 import React from 'react';
-import { Hero } from './components/Hero';
-import { Navbar } from './components/Navbar';
-import { Portfolio } from './components/Portfolio';
-import { BookingEngine } from './components/BookingEngine';
-import { Academy } from './components/Academy';
-import { About } from './components/About';
-import { Footer } from './components/Footer';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { PublicSite } from './pages/PublicSite';
+import { AdminLogin } from './admin/AdminLogin';
+import { AdminLayout } from './admin/AdminLayout';
+import { DashboardPage } from './admin/DashboardPage';
+import { GearPage } from './admin/GearPage';
+import { OrdersPage } from './admin/OrdersPage';
+import { UpdatesPage } from './admin/UpdatesPage';
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen bg-obsidian text-white font-body">
-      <Navbar />
-      <Hero />
-      <About />
-      <Portfolio />
-      <BookingEngine />
-      <Academy />
-      <Footer />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Public site */}
+        <Route path="/" element={<PublicSite />} />
+
+        {/* Admin routes — accessed via /admin URL directly */}
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route element={<AdminLayout />}>
+          <Route path="/admin/dashboard" element={<DashboardPage />} />
+          <Route path="/admin/gear" element={<GearPage />} />
+          <Route path="/admin/orders" element={<OrdersPage />} />
+          <Route path="/admin/updates" element={<UpdatesPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 };
 
