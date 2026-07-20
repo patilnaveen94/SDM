@@ -23,6 +23,18 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Fix dropdown/select option colors */
+  select option {
+    background-color: #1A1A1A;
+    color: #F5F5F5;
+  }
+
+  select option:hover,
+  select option:checked {
+    background-color: #D4AF37;
+    color: #0A0A0A;
+  }
+
   ::-webkit-scrollbar {
     width: 4px;
   }
