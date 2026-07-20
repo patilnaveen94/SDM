@@ -61,8 +61,8 @@ export const GearPage: React.FC = () => {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 bg-obsidian/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-dark-surface border border-white/10 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-obsidian/80 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto" onClick={() => setShowForm(false)}>
+          <div className="bg-dark-surface border border-white/10 rounded-2xl p-5 sm:p-6 w-full max-w-lg my-10" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white mb-4">{editingId ? 'Edit' : 'Add'} Gear Item</h2>
             <div className="space-y-3">
               <input placeholder="Item Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className={inputCls} />

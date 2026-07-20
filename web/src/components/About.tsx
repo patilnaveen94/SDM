@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { businessInfo } from '../assetsConfig';
+import { getMediaConfig } from '../store/mediaStore';
 
 /** Animated counter component (OnePlus-style stat animation) */
 const AnimatedCounter: React.FC<{ value: number; suffix?: string; label: string }> = ({ value, suffix = '', label }) => {
@@ -48,6 +49,7 @@ export const About: React.FC = () => {
   const imageScale = useTransform(scrollYProgress, [0, 0.5], [0.85, 1]);
   const imageRotate = useTransform(scrollYProgress, [0, 0.5], [-2, 0]);
   const parallaxY = useTransform(scrollYProgress, [0, 1], ['5%', '-5%']);
+  const media = getMediaConfig();
 
   return (
     <section id="about" ref={sectionRef} className="scroll-mt-20 relative overflow-hidden">
@@ -94,7 +96,7 @@ export const About: React.FC = () => {
           >
             <div className="relative rounded-3xl overflow-hidden aspect-[4/5]">
               <motion.img
-                src={businessInfo.founder.profileImage}
+                src={media.founderImage}
                 alt={businessInfo.founder.name}
                 className="w-full h-full object-cover"
                 style={{ y: parallaxY }}

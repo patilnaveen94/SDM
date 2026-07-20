@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { portfolioItems, PortfolioCategory } from '../assetsConfig';
+import { getMediaConfig } from '../store/mediaStore';
+
+type PortfolioCategory = 'all' | 'wedding' | 'corporate' | 'rental_gear' | 'videos';
 
 const categories: { label: string; value: PortfolioCategory }[] = [
   { label: 'All', value: 'all' },
@@ -12,9 +14,12 @@ const categories: { label: string; value: PortfolioCategory }[] = [
 
 export const Portfolio: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<PortfolioCategory>('all');
-  const [selectedItem, setSelectedItem] = useState<typeof portfolioItems[0] | null>(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: '-10%' });
+
+  const media = getMediaConfig();
+  const portfolioItems = media.portfolioItems;
 
   const filteredItems = activeFilter === 'all'
     ? portfolioItems

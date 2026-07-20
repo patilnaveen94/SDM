@@ -1,9 +1,11 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { businessInfo, heroAssets } from '../assetsConfig';
+import { businessInfo } from '../assetsConfig';
+import { getMediaConfig } from '../store/mediaStore';
 
 export const Hero: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const media = getMediaConfig();
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ['start start', 'end start'],
@@ -29,9 +31,9 @@ export const Hero: React.FC = () => {
             muted
             playsInline
             className="w-full h-full object-cover"
-            poster={heroAssets.fallbackImage}
+            poster={media.heroFallbackImage}
           >
-            <source src={heroAssets.videoUrl} type="video/mp4" />
+            <source src={media.heroVideoUrl} type="video/mp4" />
           </video>
         </motion.div>
       </motion.div>
