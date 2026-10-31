@@ -45,18 +45,18 @@ export const UpdatesPage: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-heading font-bold text-white">Updates & Feed</h1>
           <p className="text-gray-500 text-sm mt-1">Publish achievements, new gear, and recent shoots for your visitors</p>
         </div>
-        <button onClick={openCreate} className="px-5 py-2.5 rounded-xl bg-gold text-obsidian font-bold text-sm">+ New Post</button>
+        <button onClick={openCreate} className="w-full px-5 py-2.5 rounded-xl bg-gold text-obsidian font-bold text-sm sm:w-auto">+ New Post</button>
       </div>
 
       {/* Form */}
       {showForm && (
-        <div className="fixed inset-0 z-50 bg-obsidian/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-dark-surface border border-white/10 rounded-2xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-obsidian/80 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={() => setShowForm(false)}>
+          <div className="my-2 bg-dark-surface border border-white/10 rounded-2xl p-4 sm:p-6 w-full max-w-lg sm:my-0" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white mb-4">{editingId ? 'Edit' : 'New'} Post</h2>
             <div className="space-y-3">
               <select value={form.type} onChange={e => setForm({...form, type: e.target.value as any})} className={inputCls + ' appearance-none'}>
@@ -74,7 +74,7 @@ export const UpdatesPage: React.FC = () => {
                 Publish immediately
               </label>
             </div>
-            <div className="flex gap-3 mt-6">
+            <div className="flex flex-col-reverse gap-3 mt-6 sm:flex-row">
               <button onClick={handleSave} className="flex-1 py-3 rounded-xl bg-gold text-obsidian font-bold text-sm">Save</button>
               <button onClick={() => setShowForm(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 text-sm">Cancel</button>
             </div>
@@ -88,7 +88,7 @@ export const UpdatesPage: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {updates.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(post => (
-            <div key={post.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 flex gap-4">
+            <div key={post.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col gap-4 sm:flex-row">
               {post.image && <img src={post.image} alt="" className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export const UpdatesPage: React.FC = () => {
                 <p className="text-gray-500 text-xs mt-1 line-clamp-2">{post.description}</p>
                 <p className="text-[10px] text-gray-600 mt-2">{new Date(post.createdAt).toLocaleDateString()}</p>
               </div>
-              <div className="flex flex-col gap-2 flex-shrink-0">
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-col sm:flex-shrink-0">
                 <button onClick={() => openEdit(post)} className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 text-xs">Edit</button>
                 <button onClick={() => togglePublish(post.id, post.published)} className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-300 text-xs">{post.published ? 'Unpublish' : 'Publish'}</button>
                 <button onClick={() => handleDelete(post.id)} className="px-3 py-1.5 rounded-lg bg-red-500/5 text-red-400 text-xs">Delete</button>

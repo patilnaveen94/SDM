@@ -5,9 +5,12 @@ import { AdminLogin } from './admin/AdminLogin';
 import { AdminLayout } from './admin/AdminLayout';
 import { DashboardPage } from './admin/DashboardPage';
 import { GearPage } from './admin/GearPage';
+import { InventoryPage } from './admin/InventoryPage';
 import { OrdersPage } from './admin/OrdersPage';
+import { ReportsPage } from './admin/ReportsPage';
 import { UpdatesPage } from './admin/UpdatesPage';
 import { MediaPage } from './admin/MediaPage';
+import { PartnersPage } from './admin/PartnersPage';
 
 const App: React.FC = () => {
   return (
@@ -21,9 +24,12 @@ const App: React.FC = () => {
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<DashboardPage />} />
           <Route path="/admin/gear" element={<GearPage />} />
+          <Route path="/admin/inventory" element={<InventoryPage />} />
           <Route path="/admin/orders" element={<OrdersPage />} />
+          <Route path="/admin/reports" element={<ReportsPage />} />
           <Route path="/admin/updates" element={<UpdatesPage />} />
           <Route path="/admin/media" element={<MediaPage />} />
+          <Route path="/admin/partners" element={<PartnersPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

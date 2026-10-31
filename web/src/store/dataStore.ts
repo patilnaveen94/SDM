@@ -1,14 +1,16 @@
 /**
  * LocalStorage-backed data store for SDM Camera & Solutions.
- * Manages: Gear inventory, Orders (rentals + event bookings), Updates/Feed.
+ * Manages: Gear inventory, Orders (rentals + event bookings), Updates/Feed, Customer profiles.
  */
+
+import { createDemoDataset } from './demoData';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface GearItem {
   id: string;
   name: string;
-  category: 'camera' | 'lens' | 'anamorphic' | 'drone' | 'lighting' | 'accessory';
+  category: 'camera' | 'lens' | 'anamorphic' | 'drone' | 'lighting' | 'gimbal' | 'audio' | 'accessory';
   brand: string;
   dailyRate: number;
   description: string;
@@ -17,6 +19,16 @@ export interface GearItem {
   available: boolean;
   totalStock: number;
   currentlyRented: number;
+  /** 'professional' for pro rental, 'hobbyist' for casual/family shoot rental */
+  rentalTier?: 'professional' | 'hobbyist';
+}
+
+export interface GearInventoryBreakdown {
+  gear: GearItem;
+  available: number;
+  out: number;
+  blocked: number;
+  missing: number;
 }
 
 export interface OrderItem {
@@ -26,24 +38,40 @@ export interface OrderItem {
   dailyRate: number;
 }
 
+export interface PartialReturnEntry {
+  returnedAt: string;
+  items: OrderItem[];
+  note: string;
+}
+
 export interface Order {
   id: string;
   type: 'rental' | 'event_booking';
   customerName: string;
   customerPhone: string;
   customerEmail: string;
+  customerAadhaar?: string;
+  customerPan?: string;
   items: OrderItem[];
   eventType?: string;
   eventDetails?: string;
+  discountAmount?: number;
+  rentalHoursPerPeriod?: 12 | 24;
   totalAmount: number;
-  status: 'active' | 'returned_pending_payment' | 'overdue' | 'settled';
+  status: 'active' | 'partially_returned' | 'returned_pending_payment' | 'overdue' | 'settled';
   paymentStatus: 'pending' | 'paid';
   createdAt: string;
   startDate: string;
+  startTime?: string;
   endDate: string;
+  endTime?: string;
   days: number;
   notes?: string;
   returnedAt?: string;
+  returnedItems?: Record<string, number>;
+  partialReturns?: PartialReturnEntry[];
+  missingItems?: OrderItem[];
+  missingNote?: string;
   settledAt?: string;
 }
 
@@ -58,19 +86,101 @@ export interface UpdatePost {
   published: boolean;
 }
 
+/** Saved customer profile for future autocomplete */
+export interface CustomerProfile {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  aadhaar?: string;
+  pan?: string;
+  lastUpdated: string;
+}
+
+export interface QuoteRequest {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  eventType: string;
+  requestedDate: string;
+  message: string;
+  createdAt: string;
+  convertedOrderId?: string;
+}
+
+export interface QuotationLine {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+}
+
+export interface QuotationDraft {
+  requestId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  eventType: string;
+  requestedDate: string;
+  message: string;
+  lines: QuotationLine[];
+  discount: number;
+  validUntil: string;
+  terms: string;
+}
+
+export interface SavedQuotation extends QuotationDraft {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Partner/Sponsor added by admin visible on public site */
+export interface Partner {
+  id: string;
+  name: string;
+  logo: string;
+  website?: string;
+  description?: string;
+  displayOrder: number;
+  active: boolean;
+}
+
 // ─── Storage Keys ────────────────────────────────────────────────────────────
 
 const KEYS = {
   GEAR: 'sdm_gear_inventory',
   ORDERS: 'sdm_orders',
   UPDATES: 'sdm_updates',
+  CUSTOMERS: 'sdm_customer_profiles',
+  QUOTE_REQUESTS: 'sdm_quote_requests',
+  QUOTATIONS: 'sdm_quotations',
+  PARTNERS: 'sdm_partners',
 };
+const DEMO_MODE_KEY = 'sdm_admin_data_mode';
+const DEMO_SEED_KEY = 'sdm_demo_data_seed_version';
+const DEMO_SEED_VERSION = '1';
+
+export function isDemoModeEnabled(): boolean {
+  return localStorage.getItem(DEMO_MODE_KEY) === 'demo';
+}
+
+export function getScopedStorageKey(key: string): string {
+  return isDemoModeEnabled() ? `sdm_demo_${key.replace(/^sdm_/, '')}` : key;
+}
+
+export function enableDemoMode(enabled: boolean): void {
+  if (enabled) seedDemoData();
+  localStorage.setItem(DEMO_MODE_KEY, enabled ? 'demo' : 'live');
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getItem<T>(key: string, fallback: T[]): T[] {
   try {
-    const data = localStorage.getItem(key);
+    const data = localStorage.getItem(getScopedStorageKey(key));
     return data ? JSON.parse(data) : fallback;
   } catch {
     return fallback;
@@ -78,7 +188,25 @@ function getItem<T>(key: string, fallback: T[]): T[] {
 }
 
 function setItem<T>(key: string, data: T[]): void {
-  localStorage.setItem(key, JSON.stringify(data));
+  localStorage.setItem(getScopedStorageKey(key), JSON.stringify(data));
+}
+
+function seedDemoData(): void {
+  if (localStorage.getItem(DEMO_SEED_KEY) === DEMO_SEED_VERSION) return;
+  const demo = createDemoDataset();
+  const records: Array<[string, unknown]> = [
+    [KEYS.GEAR, demo.gear],
+    [KEYS.ORDERS, demo.orders],
+    [KEYS.CUSTOMERS, demo.customers],
+    [KEYS.QUOTE_REQUESTS, demo.quoteRequests],
+    [KEYS.QUOTATIONS, demo.quotations],
+    [KEYS.UPDATES, demo.updates],
+    [KEYS.PARTNERS, demo.partners],
+  ];
+  records.forEach(([key, value]) => {
+    localStorage.setItem(`sdm_demo_${key.replace(/^sdm_/, '')}`, JSON.stringify(value));
+  });
+  localStorage.setItem(DEMO_SEED_KEY, DEMO_SEED_VERSION);
 }
 
 function generateId(): string {
@@ -92,8 +220,27 @@ export function calculateDays(startDate: string, endDate: string): number {
   return Math.max(diff, 1);
 }
 
+export function calculateEndDateTime(startDate: string, startTime: string, durationHours: number): { endDate: string; endTime: string } {
+  const [year, month, day] = startDate.split('-').map(Number);
+  const [hours, minutes] = startTime.split(':').map(Number);
+  const end = new Date(year, month - 1, day, hours, minutes + durationHours * 60);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return {
+    endDate: `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`,
+    endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`,
+  };
+}
+
 export function calculateOrderTotal(items: OrderItem[], days: number): number {
   return items.reduce((sum, item) => sum + item.dailyRate * item.quantity * days, 0);
+}
+
+export function isFutureOrderStart(order: Pick<Order, 'startDate' | 'startTime'>, now = new Date()): boolean {
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  if (order.startDate !== today) return order.startDate > today;
+  if (!order.startTime) return false;
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  return order.startTime > currentTime;
 }
 
 // ─── Gear CRUD ───────────────────────────────────────────────────────────────
@@ -104,6 +251,42 @@ export function getGearInventory(): GearItem[] {
 
 export function getAvailableGear(): GearItem[] {
   return getGearInventory().filter(g => g.available && (g.totalStock - g.currentlyRented) > 0);
+}
+
+export function getGearInventoryBreakdown(): GearInventoryBreakdown[] {
+  const rentals = getOrders().filter(order => order.type === 'rental');
+
+  return getGearInventory().map(gear => {
+    let out = 0;
+    let blocked = 0;
+    let missing = 0;
+
+    rentals.forEach(order => {
+      if (order.status === 'returned_pending_payment' || order.status === 'settled') {
+        missing += order.missingItems
+          ?.filter(item => item.gearId === gear.id)
+          .reduce((sum, item) => sum + item.quantity, 0) || 0;
+        return;
+      }
+      if (order.status !== 'active' && order.status !== 'partially_returned') return;
+      const quantity = order.items
+        .filter(item => item.gearId === gear.id)
+        .reduce((sum, item) => sum + item.quantity - (order.returnedItems?.[item.gearId] || 0), 0);
+      if (isFutureOrderStart(order)) {
+        blocked += quantity;
+      } else {
+        out += quantity;
+      }
+    });
+
+    return {
+      gear,
+      available: Math.max(0, gear.totalStock - out - blocked - missing),
+      out,
+      blocked,
+      missing,
+    };
+  });
 }
 
 export function addGearItem(item: Omit<GearItem, 'id'>): GearItem {
@@ -167,33 +350,87 @@ export function getOrders(): Order[] {
   return getItem<Order>(KEYS.ORDERS, []);
 }
 
+export function getQuoteRequests(): QuoteRequest[] {
+  return getItem<QuoteRequest>(KEYS.QUOTE_REQUESTS, []);
+}
+
+export function addQuoteRequest(request: Omit<QuoteRequest, 'id' | 'createdAt' | 'convertedOrderId'>): QuoteRequest {
+  const newRequest: QuoteRequest = { ...request, id: generateId(), createdAt: new Date().toISOString() };
+  const all = getQuoteRequests();
+  all.push(newRequest);
+  setItem(KEYS.QUOTE_REQUESTS, all);
+  return newRequest;
+}
+
+export function getQuotations(): SavedQuotation[] {
+  return getItem<SavedQuotation>(KEYS.QUOTATIONS, []);
+}
+
+export function saveQuotation(draft: QuotationDraft, id?: string): SavedQuotation {
+  const all = getQuotations();
+  const now = new Date().toISOString();
+  const index = id ? all.findIndex(quotation => quotation.id === id) : -1;
+  const quotation: SavedQuotation = index >= 0
+    ? { ...all[index], ...draft, updatedAt: now }
+    : { ...draft, id: generateId(), createdAt: now, updatedAt: now };
+  if (index >= 0) all[index] = quotation;
+  else all.push(quotation);
+  setItem(KEYS.QUOTATIONS, all);
+  return quotation;
+}
+
+export function markQuoteRequestConverted(id: string, orderId: string): QuoteRequest | null {
+  const all = getQuoteRequests();
+  const index = all.findIndex(request => request.id === id);
+  if (index === -1) return null;
+  all[index].convertedOrderId = orderId;
+  setItem(KEYS.QUOTE_REQUESTS, all);
+  return all[index];
+}
+
 export function getActiveOrders(): Order[] {
-  return getOrders().filter(o => o.status === 'active');
+  return getOrders().filter(o => o.status === 'active' || o.status === 'partially_returned');
 }
 
 export function getOverdueOrders(): Order[] {
   const today = new Date().toISOString().split('T')[0];
-  return getOrders().filter(o => o.status === 'active' && o.endDate < today);
+  return getOrders().filter(o => (o.status === 'active' || o.status === 'partially_returned') && o.endDate < today);
 }
 
 export function getPendingPaymentOrders(): Order[] {
   return getOrders().filter(o => o.status === 'returned_pending_payment');
 }
 
+export function getPartiallyReturnedOrders(): Order[] {
+  return getOrders().filter(order => order.status === 'partially_returned');
+}
+
 export function getSettledOrders(): Order[] {
   return getOrders().filter(o => o.status === 'settled');
 }
 
+export function getOutstandingOrderItems(order: Order): OrderItem[] {
+  return order.items.flatMap(item => {
+    const quantity = item.quantity - (order.returnedItems?.[item.gearId] || 0);
+    return quantity > 0 ? [{ ...item, quantity }] : [];
+  });
+}
+
 /** Create order — status starts as 'active', gear counts auto-update */
 export function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'status' | 'paymentStatus' | 'totalAmount' | 'days'>): Order {
-  const days = calculateDays(order.startDate, order.endDate);
-  const totalAmount = calculateOrderTotal(order.items, days);
+  const days = order.rentalHoursPerPeriod && order.startTime && order.endTime
+    ? Math.max(1, Math.ceil(((new Date(`${order.endDate}T${order.endTime}`).getTime() - new Date(`${order.startDate}T${order.startTime}`).getTime()) / 3600000) / order.rentalHoursPerPeriod))
+    : calculateDays(order.startDate, order.endDate);
+  const subtotal = calculateOrderTotal(order.items, days);
+  const discountAmount = Math.min(Math.max(0, order.discountAmount || 0), subtotal);
+  const totalAmount = subtotal - discountAmount;
   const newOrder: Order = {
     ...order,
     id: generateId(),
     createdAt: new Date().toISOString(),
     status: 'active',
     paymentStatus: 'pending',
+    discountAmount,
     totalAmount,
     days,
   };
@@ -211,15 +448,77 @@ export function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'status' | '
 export function markItemsReturned(orderId: string): Order | null {
   const all = getOrders();
   const idx = all.findIndex(o => o.id === orderId);
-  if (idx === -1) return null;
+  if (idx === -1 || (all[idx].status !== 'active' && all[idx].status !== 'partially_returned')) return null;
+  const outstandingItems = getOutstandingOrderItems(all[idx]);
+  if (outstandingItems.length === 0) return null;
   all[idx].status = 'returned_pending_payment';
   all[idx].returnedAt = new Date().toISOString();
   setItem(KEYS.ORDERS, all);
   // Return items to inventory
   if (all[idx].type === 'rental') {
-    returnItems(all[idx].items);
+    returnItems(outstandingItems);
   }
   return all[idx];
+}
+
+export function markItemsPartiallyReturned(
+  orderId: string,
+  returnedItems: Array<{ gearId: string; quantity: number }>,
+  note: string,
+  closeWithMissingItems = false,
+): Order | null {
+  const all = getOrders();
+  const index = all.findIndex(order => order.id === orderId);
+  if (index === -1) return null;
+  const order = all[index];
+  if (order.status !== 'active' && order.status !== 'partially_returned') return null;
+
+  const existingReturned = order.returnedItems || {};
+  const validItems = returnedItems.filter(item => {
+    const orderedQuantity = order.items.find(orderItem => orderItem.gearId === item.gearId)?.quantity || 0;
+    const remaining = orderedQuantity - (existingReturned[item.gearId] || 0);
+    return Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= remaining;
+  });
+  const hasPreviouslyReturnedItems = Object.values(existingReturned).some(quantity => quantity > 0);
+  if (
+    validItems.length !== returnedItems.length
+    || (!validItems.length && !(closeWithMissingItems && hasPreviouslyReturnedItems))
+    || !note.trim()
+  ) return null;
+
+  const updatedReturned = { ...existingReturned };
+  const gearItems: OrderItem[] = validItems.map(item => {
+    updatedReturned[item.gearId] = (updatedReturned[item.gearId] || 0) + item.quantity;
+    const orderItem = order.items.find(candidate => candidate.gearId === item.gearId)!;
+    return { ...orderItem, quantity: item.quantity };
+  });
+  const outstanding = order.items.some(item => (updatedReturned[item.gearId] || 0) < item.quantity);
+  const missingItems = order.items.flatMap(item => {
+    const quantity = item.quantity - (updatedReturned[item.gearId] || 0);
+    return quantity > 0 ? [{ ...item, quantity }] : [];
+  });
+
+  order.returnedItems = updatedReturned;
+  if (gearItems.length > 0) {
+    order.partialReturns = [...(order.partialReturns || []), {
+      returnedAt: new Date().toISOString(),
+      items: gearItems,
+      note: note.trim(),
+    }];
+  }
+  order.notes = [order.notes, `Return update: ${note.trim()}`].filter(Boolean).join('\n');
+  order.status = outstanding && !closeWithMissingItems ? 'partially_returned' : 'returned_pending_payment';
+  if (closeWithMissingItems && outstanding) {
+    order.missingItems = missingItems;
+    order.missingNote = note.trim();
+  } else if (!outstanding) {
+    order.missingItems = [];
+    order.missingNote = undefined;
+  }
+  if (!outstanding || closeWithMissingItems) order.returnedAt = new Date().toISOString();
+  setItem(KEYS.ORDERS, all);
+  if (order.type === 'rental') returnItems(gearItems);
+  return order;
 }
 
 /** Mark order as fully settled (payment received) */
@@ -266,6 +565,79 @@ export function deleteUpdate(id: string): boolean {
   const filtered = all.filter(u => u.id !== id);
   if (filtered.length === all.length) return false;
   setItem(KEYS.UPDATES, filtered);
+  return true;
+}
+
+// ─── Customer Profiles CRUD ──────────────────────────────────────────────────
+
+export function getCustomerProfiles(): CustomerProfile[] {
+  return getItem<CustomerProfile>(KEYS.CUSTOMERS, []);
+}
+
+/** Search customers by name prefix (case-insensitive) */
+export function searchCustomersByName(query: string): CustomerProfile[] {
+  if (!query.trim()) return [];
+  const q = query.toLowerCase();
+  return getCustomerProfiles().filter(c => c.name.toLowerCase().includes(q)).slice(0, 5);
+}
+
+/** Save or update a customer profile. Matches by phone number. */
+export function saveCustomerProfile(profile: Omit<CustomerProfile, 'id' | 'lastUpdated'>): CustomerProfile {
+  const all = getCustomerProfiles();
+  const existingIdx = all.findIndex(c => c.phone === profile.phone);
+  const now = new Date().toISOString();
+  if (existingIdx !== -1) {
+    all[existingIdx] = { ...all[existingIdx], ...profile, lastUpdated: now };
+    setItem(KEYS.CUSTOMERS, all);
+    return all[existingIdx];
+  } else {
+    const newProfile: CustomerProfile = { ...profile, id: generateId(), lastUpdated: now };
+    all.push(newProfile);
+    setItem(KEYS.CUSTOMERS, all);
+    return newProfile;
+  }
+}
+
+export function deleteCustomerProfile(id: string): boolean {
+  const all = getCustomerProfiles();
+  const filtered = all.filter(c => c.id !== id);
+  if (filtered.length === all.length) return false;
+  setItem(KEYS.CUSTOMERS, filtered);
+  return true;
+}
+
+// ─── Partners CRUD ───────────────────────────────────────────────────────────
+
+export function getPartners(): Partner[] {
+  return getItem<Partner>(KEYS.PARTNERS, []).sort((a, b) => a.displayOrder - b.displayOrder);
+}
+
+export function getActivePartners(): Partner[] {
+  return getPartners().filter(p => p.active);
+}
+
+export function addPartner(partner: Omit<Partner, 'id'>): Partner {
+  const all = getPartners();
+  const newPartner: Partner = { ...partner, id: generateId() };
+  all.push(newPartner);
+  setItem(KEYS.PARTNERS, all);
+  return newPartner;
+}
+
+export function updatePartner(id: string, updates: Partial<Partner>): Partner | null {
+  const all = getPartners();
+  const idx = all.findIndex(p => p.id === id);
+  if (idx === -1) return null;
+  all[idx] = { ...all[idx], ...updates };
+  setItem(KEYS.PARTNERS, all);
+  return all[idx];
+}
+
+export function deletePartner(id: string): boolean {
+  const all = getPartners();
+  const filtered = all.filter(p => p.id !== id);
+  if (filtered.length === all.length) return false;
+  setItem(KEYS.PARTNERS, filtered);
   return true;
 }
 

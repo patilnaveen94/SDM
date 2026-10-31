@@ -1,3 +1,5 @@
+import { getScopedStorageKey } from './dataStore';
+
 /**
  * Media/Content configuration store.
  * Admin can change hero video, portfolio images, about photo, etc.
@@ -30,28 +32,30 @@ const DEFAULT_CONFIG: MediaConfig = {
 
 export function getMediaConfig(): MediaConfig {
   try {
-    const data = localStorage.getItem(KEY);
-    return data ? { ...DEFAULT_CONFIG, ...JSON.parse(data) } : DEFAULT_CONFIG;
+    const data = localStorage.getItem(getScopedStorageKey(KEY));
+    return data
+      ? { ...DEFAULT_CONFIG, ...JSON.parse(data) }
+      : { ...DEFAULT_CONFIG, portfolioItems: DEFAULT_CONFIG.portfolioItems.map(item => ({ ...item })) };
   } catch {
-    return DEFAULT_CONFIG;
+    return { ...DEFAULT_CONFIG, portfolioItems: DEFAULT_CONFIG.portfolioItems.map(item => ({ ...item })) };
   }
 }
 
 export function updateMediaConfig(updates: Partial<MediaConfig>): MediaConfig {
   const current = getMediaConfig();
   const updated = { ...current, ...updates };
-  localStorage.setItem(KEY, JSON.stringify(updated));
+  localStorage.setItem(getScopedStorageKey(KEY), JSON.stringify(updated));
   return updated;
 }
 
 export function addPortfolioItem(item: Omit<MediaConfig['portfolioItems'][0], 'id'>): void {
   const config = getMediaConfig();
   config.portfolioItems.push({ ...item, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) });
-  localStorage.setItem(KEY, JSON.stringify(config));
+  localStorage.setItem(getScopedStorageKey(KEY), JSON.stringify(config));
 }
 
 export function deletePortfolioItem(id: string): void {
   const config = getMediaConfig();
   config.portfolioItems = config.portfolioItems.filter(p => p.id !== id);
-  localStorage.setItem(KEY, JSON.stringify(config));
+  localStorage.setItem(getScopedStorageKey(KEY), JSON.stringify(config));
 }

@@ -112,7 +112,17 @@ export type EventCategory =
   | 'kids_photoshoot'
   | 'pre_post_wedding'
   | 'corporate'
-  | 'social_gathering';
+  | 'social_gathering'
+  // Corporate shoot sub-types
+  | 'podcast'
+  | 'testimonials'
+  | 'brand_shoot'
+  | 'product_shoot'
+  | 'events_vertical'
+  // Documentary sub-types
+  | 'documentary_news_events'
+  | 'documentary_add'
+  | 'documentary_movies';
 
 export const eventPackages: EventPackage[] = [
   {
@@ -191,6 +201,96 @@ export const eventPackages: EventPackage[] = [
     features: ['3+ Photographers', 'Videography Team', 'Drone Coverage', 'Full Event Documentation'],
     image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80',
     duration: 'Full Day',
+  },
+  // ── Corporate Shoot sub-types ──
+  {
+    id: 'evt-008',
+    title: 'Podcast Production',
+    category: 'podcast',
+    description: 'Multi-camera studio-quality podcast recording with professional lighting, audio, and post-production editing.',
+    startingPrice: 18000,
+    currency: 'INR',
+    features: ['Multi-Cam Setup', 'Pro Audio Recording', 'Full Edit & Export', 'Thumbnail Graphics', 'YouTube-Ready Output'],
+    image: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=800&q=80',
+    duration: 'Half Day',
+  },
+  {
+    id: 'evt-009',
+    title: 'Testimonial Videos',
+    category: 'testimonials',
+    description: 'Polished customer or employee testimonial videos that build brand trust and credibility.',
+    startingPrice: 12000,
+    currency: 'INR',
+    features: ['Studio or On-Location', '4K Recording', 'Professional Lighting', 'Branded Lower Thirds', 'Quick Turnaround'],
+    image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&q=80',
+    duration: '3-4 Hours',
+  },
+  {
+    id: 'evt-010',
+    title: 'Brand Shoot',
+    category: 'brand_shoot',
+    description: 'Comprehensive brand photography and video content for websites, social media, and marketing collateral.',
+    startingPrice: 35000,
+    currency: 'INR',
+    features: ['Brand Story Film', 'Team Headshots', 'Lifestyle Photography', 'Drone Exterior Shots', 'Social Cutdowns'],
+    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=80',
+    duration: 'Full Day',
+  },
+  {
+    id: 'evt-011',
+    title: 'Product Shoot',
+    category: 'product_shoot',
+    description: 'High-end product photography and videography for e-commerce, advertising, and catalogue campaigns.',
+    startingPrice: 15000,
+    currency: 'INR',
+    features: ['Studio Lighting Setup', 'White & Dark Backdrop', 'Hero Shots + Detail Shots', 'Lifestyle Context Photos', '360° Spin Video'],
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
+    duration: 'Full Day',
+  },
+  {
+    id: 'evt-012',
+    title: 'Events — Vertical for Social Media',
+    category: 'events_vertical',
+    description: 'Event coverage specifically shot and edited in vertical format (9:16) optimised for Instagram Reels, TikTok, and YouTube Shorts.',
+    startingPrice: 20000,
+    currency: 'INR',
+    features: ['9:16 Vertical Shoot', 'Same-Day Reel Edit', 'Motion Graphics', 'Music Sync', 'Platform-Ready Delivery'],
+    image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800&q=80',
+    duration: 'Half to Full Day',
+  },
+  // ── Documentary sub-types ──
+  {
+    id: 'evt-013',
+    title: 'Documentary — News & Events',
+    category: 'documentary_news_events',
+    description: 'Fast-turnaround documentary-style coverage of news events, press meets, and public interest stories with journalistic precision.',
+    startingPrice: 30000,
+    currency: 'INR',
+    features: ['2-Cam ENG Setup', 'On-Site Audio', 'Interview Recording', 'Same-Day Rough Cut', 'Broadcast-Ready Deliverable'],
+    image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80',
+    duration: 'As Required',
+  },
+  {
+    id: 'evt-014',
+    title: 'Documentary — Ads & Promos',
+    category: 'documentary_add',
+    description: 'Compelling documentary-style advertisements and promotional films that connect brands with their audience through authentic storytelling.',
+    startingPrice: 55000,
+    currency: 'INR',
+    features: ['Script & Storyboard', 'Full Production Crew', 'Cinematic Grade', 'VoiceOver Recording', 'Multiple Deliverable Formats'],
+    image: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=800&q=80',
+    duration: '2-3 Days',
+  },
+  {
+    id: 'evt-015',
+    title: 'Movie Shoot',
+    category: 'documentary_movies',
+    description: 'End-to-end movie production support — from short films and music videos to feature-length productions with full cinema-grade equipment and crew.',
+    startingPrice: 100000,
+    currency: 'INR',
+    features: ['Full Cinema Rig', 'Multi-Camera Setup', 'Gaffer & Lighting Crew', 'Production Sound', 'Post-Production Support'],
+    image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80',
+    duration: 'Multi-Day',
   },
 ];
 
@@ -516,6 +616,7 @@ export const webNavItems: NavItem[] = [
   { label: 'Portfolio', href: '#portfolio' },
   { label: 'Booking', href: '#booking' },
   { label: 'Academy', href: '#academy' },
+  { label: 'Partners', href: '#partners' },
   { label: 'Contact', href: '#contact' },
 ];
 
