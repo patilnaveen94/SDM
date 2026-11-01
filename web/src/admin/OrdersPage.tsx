@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   getOrders, getGearInventory, getOutstandingOrderItems, createOrder, markItemsPartiallyReturned, markItemsReturned, settleOrder,
-  Order, OrderItem, QuoteRequest, calculateDays, calculateEndDateTime, calculateOrderTotal, markQuoteRequestConverted,
+  Order, OrderItem, QuoteRequest, calculateDays, calculateEndDateTime, calculateOrderTotal, markQuoteRequestApproved, markQuoteRequestConverted,
   searchCustomersByName, saveCustomerProfile, CustomerProfile,
 } from '../store/dataStore';
 import { InvoiceModal } from './InvoiceModal';
@@ -73,11 +73,16 @@ export const OrdersPage: React.FC = () => {
     setCustomerName(quote.customerName);
     setCustomerPhone(quote.customerPhone);
     setCustomerEmail(quote.customerEmail);
-    setOrderType('event_booking');
+    const isRentalEnquiry = quote.requestType === 'rental';
+    setOrderType(isRentalEnquiry ? 'rental' : 'event_booking');
+    setSelectedItems(isRentalEnquiry ? quote.rentalItems || [] : []);
+    if (isRentalEnquiry) {
+      setRentalPeriods(calculateDays(quote.requestedDate, quote.requestedEndDate || quote.requestedDate));
+    }
     setEventType(quote.eventType);
     setNotes(quote.message);
     setStartDate(quote.requestedDate);
-    setEndDate(quote.requestedDate);
+    setEndDate(quote.requestedEndDate || quote.requestedDate);
     setStartTime('09:00');
     setEndTime('18:00');
     setQuoteRequestId(quote.id);
@@ -178,7 +183,25 @@ export const OrdersPage: React.FC = () => {
       discountAmount: appliedDiscount,
       rentalHoursPerPeriod: orderType === 'rental' ? rentalHoursPerPeriod : undefined,
     });
-    if (quoteRequestId) markQuoteRequestConverted(quoteRequestId, order.id);
+    if (quoteRequestId) {
+      markQuoteRequestApproved(quoteRequestId);
+      markQuoteRequestConverted(quoteRequestId, order.id);
+      if (customerEmail.trim()) {
+        const subject = `Your SDM rental order ${order.id} is approved`;
+        const body = [
+          `Hi ${customerName},`,
+          '',
+          'Your gear rental order is approved.',
+          `Order: ${order.id}`,
+          `Gear: ${selectedItems.map(item => `${item.gearName} ×${item.quantity}`).join(', ')}`,
+          `Rental dates: ${startDate} to ${orderEndDate}`,
+          `Approved estimate: ₹${order.totalAmount.toLocaleString('en-IN')}`,
+          '',
+          'Please contact us if you have any questions.',
+        ].join('\n');
+        window.open(`mailto:${customerEmail.trim()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+      }
+    }
     setQuoteRequestId(null);
     setLastCreatedOrder(order);
     setShowCreate(false);
@@ -297,7 +320,7 @@ export const OrdersPage: React.FC = () => {
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-white">{quoteRequestId ? 'Edit Enquiry as Order' : 'Create New Order'}</h2>
-                {quoteRequestId && <p className="mt-1 text-xs text-amber-400">Review and edit the enquiry, add equipment, then create the order.</p>}
+                {quoteRequestId && <p className="mt-1 text-xs text-amber-400">{orderType === 'rental' ? 'Review the requested dates and gear, then create the approved order.' : 'Review and edit the enquiry, add equipment, then create the order.'}</p>}
               </div>
               <button type="button" onClick={closeCreate} aria-label="Close create order" className="rounded-lg px-2 text-2xl leading-none text-gray-400 hover:bg-white/5 hover:text-white">×</button>
             </div>
@@ -414,6 +437,7 @@ export const OrdersPage: React.FC = () => {
                   <p className="mt-3 text-xs text-gray-400">
                     Due back: <span className="font-semibold text-white">{rentalEnd ? `${rentalEnd.endDate} at ${rentalEnd.endTime}` : 'Select a start date'}</span>
                   </p>
+                  {quoteRequestId && endDate && <p className="mt-1 text-xs text-amber-300">Customer requested return date: {endDate}</p>}
                   <p className="mt-1 text-[10px] text-gray-500">
                     Casual hire is 24 hours per period. Professional hire is 12 hours per period. Choose the gear tier below to set the hire duration.
                   </p>

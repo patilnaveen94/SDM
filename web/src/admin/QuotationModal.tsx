@@ -114,7 +114,8 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({ request, quotati
                   </div>
                 </div>
                 <p className="text-sm text-gray-600">{businessInfo.address}</p>
-                <p className="text-sm text-gray-600">+91 {businessInfo.phone} · {businessInfo.email}</p>
+                <p className="text-sm text-gray-600">Call +91 {businessInfo.phone} · WhatsApp +91 {businessInfo.whatsapp}</p>
+                <p className="text-sm text-gray-600">{businessInfo.email}</p>
               </div>
               <div className="sm:text-right">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-800">Prepared for customer</p>
@@ -272,7 +273,7 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({ request, quotati
             <footer className="mt-5 flex flex-col items-center justify-between gap-5 border-t border-gray-200 pt-5 sm:flex-row">
               <div className="text-center text-xs text-gray-500 sm:text-left">
                 <p className="font-semibold text-gray-700">Thank you for considering {businessInfo.name}.</p>
-                <p className="mt-1">To approve this quotation, please contact us at +91 {businessInfo.phone}.</p>
+                <p className="mt-1">To approve this quotation, call +91 {businessInfo.phone} or WhatsApp +91 {businessInfo.whatsapp}.</p>
                 <p className="mt-2">Share the downloaded PDF via email or your preferred messaging channel.</p>
               </div>
               <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full border-[3px] border-double border-blue-700 text-center text-blue-800">

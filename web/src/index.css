@@ -9,6 +9,16 @@
     box-sizing: border-box;
   }
 
+  :focus-visible {
+    outline: 2px solid #E8C547;
+    outline-offset: 3px;
+  }
+
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 80px;
@@ -51,6 +61,29 @@
   ::selection {
     background: rgba(212, 175, 55, 0.3);
     color: #F5F5F5;
+  }
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

@@ -49,6 +49,7 @@ export interface BusinessInfo {
   name: string;
   tagline: string;
   phone: string;
+  whatsapp: string;
   email: string;
   address: string;
   socials: {
@@ -68,9 +69,10 @@ export interface BusinessInfo {
 export const businessInfo: BusinessInfo = {
   name: 'SDM Camera & Solutions',
   tagline: 'Capturing Moments. Engineering Visuals. Training the Next Generation.',
-  phone: '7829399506',
+  phone: '9060606023',
+  whatsapp: '8151830115',
   email: 'info@sdmcamerasolutions.com',
-  address: 'Bengaluru, Karnataka, India',
+  address: 'H P World, 1639, Mahakavi Kuvempu Rd, beside Bengaluru, Mariappanapalya, Rajajinagar, Bengaluru, Karnataka 560021',
   socials: {
     instagram: 'https://instagram.com/sdmcamerasolutions',
     youtube: 'https://youtube.com/@sdmcamerasolutions',

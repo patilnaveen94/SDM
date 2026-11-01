@@ -43,7 +43,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
                   </div>
                 </div>
                 <p className="text-sm text-gray-600">{businessInfo.address}</p>
-                <p className="text-sm text-gray-600">+91 {businessInfo.phone} <span className="px-1 text-gray-300">|</span> {businessInfo.email}</p>
+                <p className="text-sm text-gray-600">Call +91 {businessInfo.phone} <span className="px-1 text-gray-300">|</span> WhatsApp +91 {businessInfo.whatsapp}</p>
+                <p className="text-sm text-gray-600">{businessInfo.email}</p>
               </div>
               <div className="sm:text-right">
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-800">Customer copy</p>

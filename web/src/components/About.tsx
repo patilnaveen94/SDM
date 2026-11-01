@@ -27,11 +27,11 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; label: string 
   }, [isInView, value]);
 
   return (
-    <div ref={ref} className="text-center">
-      <div className="text-4xl md:text-6xl font-heading font-bold text-gold-gradient">
+    <div ref={ref} className="rounded-2xl border border-white/5 bg-white/[0.025] px-2 py-4 text-center sm:px-4 sm:py-5 md:border-0 md:bg-transparent">
+      <div className="text-3xl font-heading font-bold text-gold-gradient sm:text-4xl md:text-6xl">
         {count}{suffix}
       </div>
-      <div className="text-sm text-gray-400 mt-2 uppercase tracking-wider">{label}</div>
+      <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-400 sm:mt-2 sm:text-xs md:text-sm">{label}</div>
     </div>
   );
 };
@@ -54,23 +54,23 @@ export const About: React.FC = () => {
   return (
     <section id="about" ref={sectionRef} className="scroll-mt-20 relative overflow-hidden">
       {/* Full-width cinematic stats bar (OnePlus KSP style) */}
-      <div className="py-20 md:py-28 border-b border-border-subtle">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
+      <div className="border-b border-white/5 py-10 sm:py-14 md:py-20">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 sm:gap-4 md:grid-cols-4 md:gap-5">
           <AnimatedCounter value={10} suffix="+" label="Years Experience" />
           <AnimatedCounter value={500} suffix="+" label="Events Captured" />
           <AnimatedCounter value={200} suffix="+" label="Students Trained" />
-          <AnimatedCounter value={50} suffix="+" label="Gear Collection" />
+          <AnimatedCounter value={150} suffix="+" label="Gear Collection" />
         </div>
       </div>
 
       {/* Main About Content */}
-      <div className="py-24 md:py-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         {/* Section Label */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.8 }}
-          className="mb-6"
+          className="mb-4 sm:mb-6"
         >
           <span className="text-gold text-xs font-bold uppercase tracking-[4px]">About the Founder</span>
         </motion.div>
@@ -80,21 +80,21 @@ export const About: React.FC = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold leading-[1.1] max-w-4xl"
+          className="max-w-4xl text-3xl font-heading font-bold leading-tight sm:text-4xl md:text-6xl lg:text-7xl"
         >
-          The Vision Behind <br/>
+          The Vision Behind{' '}
           <span className="text-gold-gradient">Every Frame.</span>
         </motion.h2>
 
         {/* Two-col layout */}
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 mt-16 items-center">
+        <div className="mt-10 grid items-center gap-12 sm:mt-14 lg:grid-cols-2 lg:gap-20">
           {/* Image with parallax + scale */}
           <motion.div
             ref={imageRef}
             style={{ scale: imageScale, rotate: imageRotate }}
-            className="relative"
+            className="relative mx-auto w-full max-w-lg"
           >
-            <div className="relative rounded-3xl overflow-hidden aspect-[4/5]">
+            <div className="relative aspect-[4/4.5] overflow-hidden rounded-3xl sm:aspect-[4/5]">
               <motion.img
                 src={media.founderImage}
                 alt={businessInfo.founder.name}
@@ -110,7 +110,7 @@ export const About: React.FC = () => {
               initial={{ opacity: 0, y: 20, scale: 0.9 }}
               animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
               transition={{ delay: 0.6, duration: 0.8 }}
-              className="absolute -bottom-6 left-6 right-6 bg-dark-surface/90 backdrop-blur-xl border border-border-subtle rounded-2xl p-5"
+              className="absolute -bottom-5 left-3 right-3 rounded-2xl border border-white/10 bg-dark-surface/95 p-4 shadow-xl backdrop-blur-xl sm:-bottom-6 sm:left-6 sm:right-6 sm:p-5"
             >
               <div className="text-xl font-heading font-bold text-white">{businessInfo.founder.name}</div>
               <div className="text-sm text-gold mt-1">{businessInfo.founder.title}</div>
@@ -118,12 +118,12 @@ export const About: React.FC = () => {
           </motion.div>
 
           {/* Text content with staggered reveals */}
-          <div className="space-y-8 lg:pt-10">
+          <div className="space-y-6 sm:space-y-8 lg:pt-6">
             <motion.p
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="text-lg md:text-xl text-gray-300 leading-relaxed"
+              className="text-base leading-7 text-gray-300 sm:text-lg sm:leading-8"
             >
               {businessInfo.founder.bio}
             </motion.p>
@@ -138,8 +138,8 @@ export const About: React.FC = () => {
                   transition={{ delay: 0.4 + i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                   className="flex items-center gap-4 group"
                 >
-                  <div className="w-8 h-px bg-gold group-hover:w-12 transition-all duration-500" />
-                  <span className="text-sm text-gray-300 group-hover:text-white transition-colors duration-300">{credential}</span>
+                  <div className="h-px w-6 flex-shrink-0 bg-gold transition-all duration-500 group-hover:w-10 sm:w-8" />
+                  <span className="text-sm leading-6 text-gray-300 transition-colors duration-300 group-hover:text-white">{credential}</span>
                 </motion.div>
               ))}
             </div>
@@ -149,11 +149,11 @@ export const About: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 1 }}
-              className="pt-6 flex flex-wrap gap-4"
+              className="pt-2 sm:pt-4"
             >
               <a
                 href={`tel:${businessInfo.phone}`}
-                className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gold text-obsidian font-bold text-base hover:shadow-lg hover:shadow-gold/20 transition-all duration-500"
+                className="group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-gold px-7 py-3.5 text-sm font-bold text-obsidian transition-all duration-300 hover:shadow-lg hover:shadow-gold/20 sm:w-auto sm:px-8 sm:py-4 sm:text-base"
               >
                 <span>Connect Now</span>
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>

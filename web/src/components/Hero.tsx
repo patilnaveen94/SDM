@@ -20,7 +20,7 @@ export const Hero: React.FC = () => {
     <section
       id="hero"
       ref={containerRef}
-      className="relative w-full h-[120vh] overflow-hidden"
+      className="relative min-h-[100svh] w-full overflow-hidden"
     >
       {/* Video Background with scroll zoom */}
       <motion.div style={{ scale }} className="absolute inset-0">
@@ -30,7 +30,7 @@ export const Hero: React.FC = () => {
             loop
             muted
             playsInline
-            className="w-full h-full object-cover"
+            className="h-[100svh] min-h-[620px] w-full object-cover"
             poster={media.heroFallbackImage}
           >
             <source src={media.heroVideoUrl} type="video/mp4" />
@@ -44,17 +44,18 @@ export const Hero: React.FC = () => {
       {/* Content */}
       <motion.div
         style={{ y: textY, opacity }}
-        className="relative z-10 flex flex-col items-center justify-center h-screen text-center px-4"
+        className="relative z-10 flex min-h-[100svh] flex-col items-center justify-center px-5 pb-24 pt-28 text-center sm:px-8"
       >
         {/* Small badge */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-8 px-4 py-1.5 rounded-full border border-gold/30 bg-gold/5 backdrop-blur-sm"
+          className="mb-6 rounded-full border border-gold/30 bg-black/30 px-4 py-2 backdrop-blur-sm sm:mb-8"
         >
           <span className="text-gold text-xs font-medium tracking-widest uppercase">
-            Premium Visual Production House
+            <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-gold align-middle" />
+            Premium visual production · Bengaluru
           </span>
         </motion.div>
 
@@ -62,10 +63,10 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-heading font-bold leading-[0.9] tracking-tight"
+          className="max-w-6xl text-[clamp(3.25rem,12vw,8.5rem)] font-heading font-bold leading-[0.94] tracking-tight"
         >
           <span className="block text-white">{businessInfo.name.split(' ')[0]}</span>
-          <span className="block text-gold-gradient mt-2">
+          <span className="mt-1 block text-gold-gradient sm:mt-2">
             {businessInfo.name.split(' ').slice(1).join(' ')}
           </span>
         </motion.h1>
@@ -74,7 +75,7 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-8 text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl font-light tracking-wide leading-relaxed"
+          className="mt-5 max-w-2xl text-sm font-light leading-7 tracking-wide text-gray-200/80 sm:mt-7 sm:text-lg sm:leading-8"
         >
           {businessInfo.tagline}
         </motion.p>
@@ -83,20 +84,20 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.0 }}
-          className="mt-12 flex flex-col sm:flex-row gap-4"
+          className="mt-8 flex w-full max-w-md flex-col gap-3 sm:mt-10 sm:w-auto sm:max-w-none sm:flex-row sm:gap-4"
         >
           <motion.a
             href="#booking"
-            className="group px-10 py-4 rounded-full bg-gold text-obsidian font-bold text-lg relative overflow-hidden"
+            className="group relative min-h-12 overflow-hidden rounded-full bg-gold px-8 py-3.5 text-center text-base font-bold text-obsidian sm:px-9 sm:py-4 sm:text-lg"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
           >
-            <span className="relative z-10">Book a Session</span>
+            <span className="relative z-10">Explore gear &amp; services <span aria-hidden="true">→</span></span>
             <div className="absolute inset-0 bg-gold-light scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
           </motion.a>
           <motion.a
             href="#academy"
-            className="px-10 py-4 rounded-full border border-white/20 text-white font-semibold text-lg backdrop-blur-sm hover:border-gold hover:text-gold transition-all duration-500"
+            className="min-h-12 rounded-full border border-white/25 bg-black/15 px-8 py-3.5 text-center text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-gold hover:text-gold sm:px-9 sm:py-4 sm:text-lg"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
           >
@@ -109,7 +110,7 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2 }}
-          className="absolute bottom-20"
+          className="absolute bottom-7 hidden sm:block"
         >
           <motion.div
             animate={{ y: [0, 10, 0] }}

@@ -104,8 +104,14 @@ export interface QuoteRequest {
   customerEmail: string;
   eventType: string;
   requestedDate: string;
+  requestedEndDate?: string;
   message: string;
   createdAt: string;
+  requestType?: 'event_booking' | 'rental';
+  rentalItems?: OrderItem[];
+  estimatedTotal?: number;
+  status?: 'pending' | 'approved';
+  approvedAt?: string;
   convertedOrderId?: string;
 }
 
@@ -354,12 +360,21 @@ export function getQuoteRequests(): QuoteRequest[] {
   return getItem<QuoteRequest>(KEYS.QUOTE_REQUESTS, []);
 }
 
-export function addQuoteRequest(request: Omit<QuoteRequest, 'id' | 'createdAt' | 'convertedOrderId'>): QuoteRequest {
-  const newRequest: QuoteRequest = { ...request, id: generateId(), createdAt: new Date().toISOString() };
+export function addQuoteRequest(request: Omit<QuoteRequest, 'id' | 'createdAt' | 'convertedOrderId' | 'status' | 'approvedAt'>): QuoteRequest {
+  const newRequest: QuoteRequest = { ...request, status: 'pending', id: generateId(), createdAt: new Date().toISOString() };
   const all = getQuoteRequests();
   all.push(newRequest);
   setItem(KEYS.QUOTE_REQUESTS, all);
   return newRequest;
+}
+
+export function markQuoteRequestApproved(id: string): QuoteRequest | null {
+  const all = getQuoteRequests();
+  const index = all.findIndex(request => request.id === id);
+  if (index === -1) return null;
+  all[index] = { ...all[index], status: 'approved', approvedAt: new Date().toISOString() };
+  setItem(KEYS.QUOTE_REQUESTS, all);
+  return all[index];
 }
 
 export function getQuotations(): SavedQuotation[] {

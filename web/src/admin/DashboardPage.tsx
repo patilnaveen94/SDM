@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   getGearInventoryBreakdown,
@@ -44,6 +44,13 @@ export const DashboardPage: React.FC = () => {
   const [activeQuotation, setActiveQuotation] = useState<ActiveQuotation | null>(null);
   const navigate = useNavigate();
   const reload = () => setRefresh(n => n + 1);
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'sdm_quote_requests' || event.key === 'sdm_demo_quote_requests') setRefresh(n => n + 1);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [setRefresh]);
 
   const inventory = getGearInventoryBreakdown();
   const orders = getOrders();
@@ -71,6 +78,7 @@ export const DashboardPage: React.FC = () => {
   const quoteRequests = getQuoteRequests();
   const savedQuotations = getQuotations();
   const openQuotes = quoteRequests.filter(request => !request.convertedOrderId);
+  const onlineEnquiries = openQuotes.filter(request => request.requestType === 'rental');
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const rentOutOrders = activeOrders.filter(order => order.type === 'rental' && !isFutureOrderStart(order));
@@ -127,11 +135,13 @@ export const DashboardPage: React.FC = () => {
   });
 
   const showQuotes = () => setDetail({
-    title: 'Customer enquiries & quotations',
+    title: 'Online enquiries & quotations',
     rows: openQuotes.map(request => ({
       title: request.customerName,
-      description: `${request.eventType} · Requested for ${request.requestedDate}${request.message ? ` · ${request.message}` : ''}`,
-      value: `${request.customerPhone}${request.customerEmail ? ` · ${request.customerEmail}` : ''}`,
+      description: request.requestType === 'rental'
+        ? `${request.rentalItems?.map(item => `${item.gearName} ×${item.quantity}`).join(', ') || 'Gear rental'} · ${request.requestedDate}${request.requestedEndDate ? ` to ${request.requestedEndDate}` : ''}${request.message ? ` · ${request.message}` : ''}`
+        : `${request.eventType} · Requested for ${request.requestedDate}${request.message ? ` · ${request.message}` : ''}`,
+      value: `${request.status === 'approved' ? 'Approved · ' : 'Pending · '}${request.customerPhone}${request.customerEmail ? ` · ${request.customerEmail}` : ''}`,
     })),
     quoteRequests: openQuotes,
   });
@@ -195,7 +205,7 @@ export const DashboardPage: React.FC = () => {
     { label: 'Partially Returned', value: partiallyReturned.length, icon: '📥', color: 'text-orange-300', onClick: () => showOrders('Partially returned orders', partiallyReturned) },
     { label: 'Missing / Written Off', value: missingUnits, icon: '⚠️', color: 'text-red-300', onClick: () => showInventory('Missing or written-off gear', 'missing') },
     { label: 'Customers', value: customers.length, icon: '👥', color: 'text-cyan-400', onClick: showCustomers },
-    { label: 'New Quotations', value: openQuotes.length, icon: '🧾', color: 'text-amber-400', onClick: showQuotes },
+    { label: 'Online Enquiries', value: onlineEnquiries.length, icon: '🛒', color: 'text-amber-400', onClick: showQuotes },
     { label: 'Saved Quotations', value: savedQuotations.length, icon: '📄', color: 'text-blue-300', onClick: showSavedQuotations },
     { label: 'Total Gear Items', value: inventory.length, icon: '🎬', color: 'text-gray-300', onClick: showAllGear },
   ];
@@ -242,6 +252,22 @@ export const DashboardPage: React.FC = () => {
         <div className="mb-8 p-4 rounded-2xl bg-yellow-500/5 border border-yellow-500/20">
           <p className="text-yellow-400 font-medium text-sm">💰 Pending collections: ₹{pendingAmount.toLocaleString('en-IN')}</p>
         </div>
+      )}
+
+      {onlineEnquiries.some(request => request.status !== 'approved') && (
+        <section className="mb-8 rounded-2xl border border-gold/20 bg-gold/5 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gold">🛒 New online rental enquiries</h2>
+              <p className="mt-1 text-xs text-gray-400">
+                {onlineEnquiries.filter(request => request.status !== 'approved').length} request(s) waiting for review
+              </p>
+            </div>
+            <button onClick={showQuotes} className="rounded-lg border border-gold/20 px-4 py-2 text-xs font-bold text-gold hover:bg-gold/10">
+              Review enquiries
+            </button>
+          </div>
+        </section>
       )}
 
       {overdueOrders.length > 0 && (
@@ -338,7 +364,16 @@ export const DashboardPage: React.FC = () => {
             ) : null}
             {detail.quoteRequests?.map(request => (
               <div key={request.id} className="mt-4 flex flex-col gap-3 rounded-xl border border-gold/20 bg-gold/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-gray-300"><span className="font-semibold text-white">{request.customerName}</span> · Prepare a priced quotation or convert this enquiry into an order.</p>
+                <div className="min-w-0 text-xs text-gray-300">
+                  <p><span className="font-semibold text-white">{request.customerName}</span> · {request.requestType === 'rental' ? 'Online gear enquiry' : 'Event enquiry'} · {request.status === 'approved' ? 'Approved' : 'Awaiting review'}</p>
+                  {request.requestType === 'rental' && (
+                    <>
+                      <p className="mt-1 text-gray-400">{request.rentalItems?.map(item => `${item.gearName} ×${item.quantity}`).join(', ')}</p>
+                      <p className="mt-1 text-gray-500">{request.requestedDate}{request.requestedEndDate ? ` – ${request.requestedEndDate}` : ''}{typeof request.estimatedTotal === 'number' ? ` · Estimate ₹${request.estimatedTotal.toLocaleString('en-IN')}` : ''}</p>
+                    </>
+                  )}
+                  <p className="mt-1 text-gray-500">{request.customerPhone}{request.customerEmail ? ` · ${request.customerEmail}` : ''}</p>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => { setActiveQuotation({ request }); setDetail(null); }}
@@ -350,7 +385,7 @@ export const DashboardPage: React.FC = () => {
                     onClick={() => navigate('/admin/orders', { state: { quoteRequest: request } })}
                     className="rounded-lg bg-gold px-4 py-2 text-xs font-bold text-obsidian hover:bg-gold-light"
                   >
-                    Convert to order
+                    {request.requestType === 'rental' ? 'Review & approve' : 'Convert to order'}
                   </button>
                 </div>
               </div>
