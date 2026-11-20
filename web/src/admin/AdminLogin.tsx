@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminLogin } from '../store/dataStore';
+import { adminLogin, isAdminLoggedIn } from '../store/dataStore';
 import { hasAdminPasswordSetupSession, setAdminPassword } from '../store/backend';
 import { ThemeToggle } from '../components/ThemeToggle';
 
@@ -17,7 +17,12 @@ export const AdminLogin: React.FC = () => {
     let active = true;
     hasAdminPasswordSetupSession()
       .then(hasSession => {
-        if (active) setSetupPassword(hasSession);
+        if (!active) return;
+        if (hasSession) {
+          setSetupPassword(true);
+        } else if (isAdminLoggedIn()) {
+          navigate('/admin/dashboard', { replace: true });
+        }
       })
       .catch(sessionError => {
         if (active) setError(sessionError instanceof Error ? sessionError.message : 'Unable to verify the invitation link.');
@@ -26,7 +31,7 @@ export const AdminLogin: React.FC = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

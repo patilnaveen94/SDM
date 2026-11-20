@@ -14,6 +14,17 @@ const LEGACY_BACKUP_KEY = 'sdm_pre_supabase_state';
 const LEGACY_BACKUP_AVAILABLE_KEY = 'sdm_pre_supabase_backup_available';
 const PRIVATE_STATE_EMPTY_KEY = 'sdm_supabase_private_state_empty';
 const ADMIN_SESSION_KEY = 'sdm_admin_auth';
+const PASSWORD_SETUP_SESSION_KEY = 'sdm_admin_password_setup';
+
+const initialUrl = new URL(window.location.href);
+const initialHashParams = new URLSearchParams(initialUrl.hash.slice(1));
+const initialAuthType = initialUrl.searchParams.get('type') || initialHashParams.get('type');
+if (
+  initialUrl.pathname.replace(/\/$/, '') === '/admin' &&
+  (initialAuthType === 'invite' || initialAuthType === 'recovery' || initialUrl.searchParams.has('code'))
+) {
+  sessionStorage.setItem(PASSWORD_SETUP_SESSION_KEY, 'true');
+}
 
 const revisions = new Map<string, number>();
 const stateWriteQueues = new Map<string, Promise<void>>();
@@ -158,14 +169,19 @@ export async function signInAdmin(email: string, password: string): Promise<{ su
 
 export async function hasAdminPasswordSetupSession(): Promise<boolean> {
   if (!isSupabaseConfigured) return false;
+  if (sessionStorage.getItem(PASSWORD_SETUP_SESSION_KEY) !== 'true') return false;
 
   const client = getSupabaseClient();
   const { data: sessionData, error: sessionError } = await client.auth.getSession();
   if (sessionError) throw sessionError;
-  if (!sessionData.session) return false;
+  if (!sessionData.session) {
+    sessionStorage.removeItem(PASSWORD_SETUP_SESSION_KEY);
+    return false;
+  }
 
   const { data: isAdmin, error: adminError } = await client.rpc('sdm_is_admin');
   if (adminError) throw adminError;
+  if (!isAdmin) sessionStorage.removeItem(PASSWORD_SETUP_SESSION_KEY);
   return Boolean(isAdmin);
 }
 
@@ -181,6 +197,7 @@ export async function setAdminPassword(password: string): Promise<void> {
 
   const { error: passwordError } = await client.auth.updateUser({ password });
   if (passwordError) throw passwordError;
+  sessionStorage.removeItem(PASSWORD_SETUP_SESSION_KEY);
 }
 
 export async function signOutAdmin(): Promise<void> {
