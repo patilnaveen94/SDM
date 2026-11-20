@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  getOrders, getGearInventory, getOutstandingOrderItems, createOrder, markItemsPartiallyReturned, markItemsReturned, settleOrder,
-  Order, OrderItem, QuoteRequest, calculateDays, calculateEndDateTime, calculateOrderTotal, markQuoteRequestApproved, markQuoteRequestConverted,
+  getOrders, getGearInventory, getOutstandingOrderItems, createOrder, markItemsPartiallyReturned, settleOrder,
+  Order, OrderItem, QuoteRequest, calculateDays, calculateOrderTotal, markQuoteRequestApproved, markQuoteRequestConverted,
   searchCustomersByName, saveCustomerProfile, CustomerProfile,
 } from '../store/dataStore';
 import { InvoiceModal } from './InvoiceModal';
@@ -27,10 +27,9 @@ export const OrdersPage: React.FC = () => {
   const [customerPan, setCustomerPan] = useState('');
   const [orderType, setOrderType] = useState<'rental' | 'event_booking'>('rental');
   const [startDate, setStartDate] = useState('');
-  const [startTime, setStartTime] = useState('09:00');
   const [endDate, setEndDate] = useState('');
-  const [endTime, setEndTime] = useState('18:00');
   const [rentalPeriods, setRentalPeriods] = useState(1);
+  const [gearSearch, setGearSearch] = useState('');
   const [quoteRequestId, setQuoteRequestId] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
   const [eventType, setEventType] = useState('');
@@ -52,13 +51,13 @@ export const OrdersPage: React.FC = () => {
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [lastCreatedOrder, setLastCreatedOrder] = useState<Order | null>(null);
 
-  const selectedTier = selectedItems.length > 0
-    ? gear.find(item => item.id === selectedItems[0].gearId)?.rentalTier || 'professional'
-    : 'professional';
-  const rentalHoursPerPeriod: 12 | 24 = selectedTier === 'hobbyist' ? 24 : 12;
-  const rentalEnd = startDate ? calculateEndDateTime(startDate, startTime, rentalPeriods * rentalHoursPerPeriod) : null;
-  const orderEndDate = orderType === 'rental' ? rentalEnd?.endDate || '' : endDate;
-  const orderEndTime = orderType === 'rental' ? rentalEnd?.endTime || '' : endTime;
+  const orderEndDate = orderType === 'rental' && startDate
+    ? (() => {
+      const date = new Date(`${startDate}T00:00:00Z`);
+      date.setUTCDate(date.getUTCDate() + rentalPeriods);
+      return date.toISOString().slice(0, 10);
+    })()
+    : endDate;
   const days = orderType === 'rental'
     ? rentalPeriods
     : startDate && endDate ? calculateDays(startDate, endDate) : 0;
@@ -83,8 +82,7 @@ export const OrdersPage: React.FC = () => {
     setNotes(quote.message);
     setStartDate(quote.requestedDate);
     setEndDate(quote.requestedEndDate || quote.requestedDate);
-    setStartTime('09:00');
-    setEndTime('18:00');
+    setGearSearch('');
     setQuoteRequestId(quote.id);
     setShowCreate(true);
     navigate(location.pathname, { replace: true, state: null });
@@ -130,11 +128,6 @@ export const OrdersPage: React.FC = () => {
     const item = gear.find(g => g.id === gearId);
     if (!item) return;
     if (selectedItems.find(i => i.gearId === gearId)) return;
-    const itemTier = item.rentalTier || 'professional';
-    const existingTier = selectedItems.length > 0
-      ? gear.find(g => g.id === selectedItems[0].gearId)?.rentalTier || 'professional'
-      : itemTier;
-    if (itemTier !== existingTier) return;
     const availQty = item.totalStock - item.currentlyRented;
     if (availQty <= 0) return;
     setSelectedItems([...selectedItems, { gearId: item.id, gearName: item.name, quantity: 1, dailyRate: item.dailyRate }]);
@@ -154,7 +147,7 @@ export const OrdersPage: React.FC = () => {
   const resetForm = () => {
     setCustomerName(''); setCustomerPhone(''); setCustomerEmail('');
     setCustomerAadhaar(''); setCustomerPan('');
-    setStartDate(''); setStartTime('09:00'); setEndDate(''); setEndTime('18:00'); setRentalPeriods(1);
+    setStartDate(''); setEndDate(''); setRentalPeriods(1); setGearSearch('');
     setSelectedItems([]); setEventType(''); setNotes(''); setDiscountAmount(0);
     setQuoteRequestId(null);
   };
@@ -175,13 +168,11 @@ export const OrdersPage: React.FC = () => {
       customerPan: customerPan || undefined,
       items: selectedItems,
       startDate,
-      startTime: startTime || undefined,
       endDate: orderEndDate,
-      endTime: orderEndTime || undefined,
       eventType: orderType === 'event_booking' ? eventType : undefined,
       notes: notes || undefined,
       discountAmount: appliedDiscount,
-      rentalHoursPerPeriod: orderType === 'rental' ? rentalHoursPerPeriod : undefined,
+      rentalHoursPerPeriod: orderType === 'rental' ? 24 : undefined,
     });
     if (quoteRequestId) {
       markQuoteRequestApproved(quoteRequestId);
@@ -239,13 +230,12 @@ export const OrdersPage: React.FC = () => {
     }
     navigate(location.pathname, { replace: true, state: null });
   }, [location, navigate]);
-  const handlePartialReturn = (closeWithMissingItems = false) => {
+  const handlePartialReturn = (recordMissingItems = false) => {
     if (!returnOrder) return;
     const returnedItems = Object.entries(returnQuantities)
       .filter(([, quantity]) => quantity > 0)
       .map(([gearId, quantity]) => ({ gearId, quantity }));
-    const hasPreviouslyReturnedItems = Object.values(returnOrder.returnedItems || {}).some(quantity => quantity > 0);
-    if (returnedItems.length === 0 && !(closeWithMissingItems && hasPreviouslyReturnedItems)) {
+    if (returnedItems.length === 0 && !recordMissingItems) {
       setReturnError('Enter the quantity received for at least one item.');
       return;
     }
@@ -253,7 +243,7 @@ export const OrdersPage: React.FC = () => {
       setReturnError('Add a note about items returned or still missing.');
       return;
     }
-    const updated = markItemsPartiallyReturned(returnOrder.id, returnedItems, returnNote, closeWithMissingItems);
+    const updated = markItemsPartiallyReturned(returnOrder.id, returnedItems, returnNote, recordMissingItems);
     if (!updated) {
       setReturnError('Could not save this return. Check quantities and try again.');
       return;
@@ -401,17 +391,13 @@ export const OrdersPage: React.FC = () => {
               )}
             </div>
 
-            {/* Dates & Times */}
+            {/* Hire Dates */}
             <div className="space-y-3 mb-6">
-              <h3 className="text-xs text-gold uppercase tracking-wider font-bold">Date & Time</h3>
+              <h3 className="text-xs text-gold uppercase tracking-wider font-bold">Hire Dates</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] text-gray-500 mb-1 block">Start Date *</label>
                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputCls} />
-                </div>
-                <div>
-                  <label className="text-[10px] text-gray-500 mb-1 block">Start Time</label>
-                  <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className={inputCls} />
                 </div>
               </div>
               {orderType === 'rental' ? (
@@ -431,15 +417,15 @@ export const OrdersPage: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] uppercase tracking-wider text-gray-500">Hire duration</p>
-                      <p className="mt-1 text-sm font-bold text-blue-300">{rentalHoursPerPeriod}-hour {selectedTier === 'hobbyist' ? 'casual' : 'professional'} hire</p>
+                      <p className="mt-1 text-sm font-bold text-blue-300">24 hours per hire period</p>
                     </div>
                   </div>
                   <p className="mt-3 text-xs text-gray-400">
-                    Due back: <span className="font-semibold text-white">{rentalEnd ? `${rentalEnd.endDate} at ${rentalEnd.endTime}` : 'Select a start date'}</span>
+                    Due back: <span className="font-semibold text-white">{startDate ? orderEndDate : 'Select a start date'}</span>
                   </p>
                   {quoteRequestId && endDate && <p className="mt-1 text-xs text-amber-300">Customer requested return date: {endDate}</p>}
                   <p className="mt-1 text-[10px] text-gray-500">
-                    Casual hire is 24 hours per period. Professional hire is 12 hours per period. Choose the gear tier below to set the hire duration.
+                    All gear is rented in full 24-hour periods. No time slot is required.
                   </p>
                 </div>
               ) : (
@@ -448,17 +434,13 @@ export const OrdersPage: React.FC = () => {
                     <label className="text-[10px] text-gray-500 mb-1 block">End Date *</label>
                     <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputCls} />
                   </div>
-                  <div>
-                    <label className="text-[10px] text-gray-500 mb-1 block">End Time</label>
-                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className={inputCls} />
-                  </div>
                 </div>
               )}
               {days > 0 && startDate && orderEndDate && (
                 <div className="flex items-center gap-2 text-gold text-sm font-medium">
                   <span>📅</span>
                   <span>{days} {orderType === 'rental' ? 'hire period' : 'day'}{days > 1 ? 's' : ''}</span>
-                  <span className="text-gray-500 text-xs font-normal">{startTime} → {orderEndTime}</span>
+                  {orderType === 'rental' && <span className="text-gray-500 text-xs font-normal">(24 hours each)</span>}
                 </div>
               )}
             </div>
@@ -466,17 +448,23 @@ export const OrdersPage: React.FC = () => {
             {/* Select Gear Items */}
             <div className="mb-6">
               <h3 className="text-xs text-gold uppercase tracking-wider font-bold mb-3">Select Items</h3>
+              <input
+                type="search"
+                value={gearSearch}
+                onChange={event => setGearSearch(event.target.value)}
+                placeholder="Search gear by name, brand, or category..."
+                aria-label="Search gear"
+                className={inputCls + ' mb-3'}
+              />
               <div className="max-h-48 overflow-y-auto space-y-2 custom-scrollbar pr-2">
-                {gear.map(g => {
+                {gear.filter(item => `${item.name} ${item.brand} ${item.category}`.toLowerCase().includes(gearSearch.trim().toLowerCase())).map(g => {
                   const avail = g.totalStock - g.currentlyRented;
                   const isSelected = selectedItems.find(i => i.gearId === g.id);
-                  const itemTier = g.rentalTier || 'professional';
-                  const mixedTier = orderType === 'rental' && selectedItems.length > 0 && itemTier !== selectedTier;
                   return (
                     <div key={g.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isSelected ? 'bg-gold/5 border-gold/30' : 'bg-white/[0.02] border-white/5 hover:border-white/10'}`}>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">{g.name}</p>
-                        <p className="text-gray-500 text-[10px]">{g.brand} • ₹{g.dailyRate}/{itemTier === 'hobbyist' ? '24hr' : '12hr'} hire • {avail} available</p>
+                        <p className="text-gray-500 text-[10px]">{g.brand} • {g.category} • ₹{g.dailyRate}/24hr hire • {avail} available</p>
                       </div>
                       {isSelected ? (
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -491,14 +479,17 @@ export const OrdersPage: React.FC = () => {
                       ) : (
                         <button
                           onClick={() => addItemToOrder(g.id)}
-                          disabled={avail <= 0 || mixedTier}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium ${avail > 0 && !mixedTier ? 'bg-gold/10 text-gold hover:bg-gold/20' : 'bg-white/5 text-gray-600 cursor-not-allowed'}`}
-                        >{mixedTier ? 'Different tier' : avail > 0 ? '+ Add' : 'N/A'}</button>
+                          disabled={avail <= 0}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium ${avail > 0 ? 'bg-gold/10 text-gold hover:bg-gold/20' : 'bg-white/5 text-gray-600 cursor-not-allowed'}`}
+                        >{avail > 0 ? '+ Add' : 'N/A'}</button>
                       )}
                     </div>
                   );
                 })}
                 {gear.length === 0 && <p className="text-gray-500 text-sm text-center py-4">No gear items. Add items in Gear page first.</p>}
+                {gear.length > 0 && !gear.some(item => `${item.name} ${item.brand} ${item.category}`.toLowerCase().includes(gearSearch.trim().toLowerCase())) && (
+                  <p className="text-gray-500 text-sm text-center py-4">No gear matches this search.</p>
+                )}
               </div>
             </div>
 
@@ -599,9 +590,11 @@ export const OrdersPage: React.FC = () => {
                     )}
                     {(order.missingItems?.length || 0) > 0 && (
                       <div className="mt-2 rounded-lg border border-red-400/10 bg-red-500/5 p-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-red-300">Missing / written off</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-red-300">
+                          {order.status === 'partially_returned' ? 'Missing · order remains open' : 'Missing / written off'}
+                        </p>
                         <p className="mt-1 text-xs text-gray-300">{order.missingItems?.map(item => `${item.gearName} ×${item.quantity}`).join(', ')}</p>
-                        {order.missingNote && <p className="mt-1 text-[10px] text-gray-500">Closeout note: {order.missingNote}</p>}
+                        {order.missingNote && <p className="mt-1 text-[10px] text-gray-500">Follow-up note: {order.missingNote}</p>}
                       </div>
                     )}
                     {(order.partialReturns || []).map((entry, index) => (
@@ -614,8 +607,8 @@ export const OrdersPage: React.FC = () => {
                   <div className="text-left sm:text-right sm:flex-shrink-0">
                     <p className="text-gold font-bold text-lg">₹{order.totalAmount.toLocaleString()}</p>
                     <p className="text-[10px] text-gray-500 mt-1">
-                      {order.startDate}{order.startTime ? ` ${order.startTime}` : ''} →<br />
-                      {order.endDate}{order.endTime ? ` ${order.endTime}` : ''}
+                      {order.startDate} →<br />
+                      {order.endDate}
                     </p>
                     <p className="text-[10px] text-gray-600">{order.days} day{order.days > 1 ? 's' : ''}</p>
                   </div>
@@ -681,7 +674,7 @@ export const OrdersPage: React.FC = () => {
               ))}
             </div>
             <label className="mt-4 block text-xs text-gray-400">
-              Return note (record missing or damaged items here) *
+              Return note (mention items returned or still missing) *
               <textarea value={returnNote} onChange={event => { setReturnNote(event.target.value); setReturnError(''); }} rows={3} className={inputCls + ' mt-2 resize-none'} placeholder="E.g. Returned camera body; one battery is still missing." />
             </label>
             {returnError && <p role="alert" className="mt-2 text-xs text-red-400">{returnError}</p>}
@@ -690,9 +683,8 @@ export const OrdersPage: React.FC = () => {
                 <button onClick={() => handlePartialReturn(false)} className="rounded-xl bg-gold py-3 text-sm font-bold text-obsidian">Save Partial Return</button>
                 <button
                   onClick={() => handlePartialReturn(true)}
-                  disabled={!Object.values(returnOrder.returnedItems || {}).some(quantity => quantity > 0) && !Object.values(returnQuantities).some(quantity => quantity > 0)}
-                  className="rounded-xl border border-orange-400/30 bg-orange-500/10 py-3 text-sm font-bold text-orange-200 enabled:hover:bg-orange-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                >Close Order · Record Missing Items</button>
+                  className="rounded-xl border border-orange-400/30 bg-orange-500/10 py-3 text-sm font-bold text-orange-200 hover:bg-orange-500/20"
+                >Record Missing Items · Keep Order Open</button>
                 <button onClick={() => setReturnOrder(null)} className="rounded-xl border border-white/10 py-3 text-sm text-gray-300 sm:col-span-2">Cancel</button>
               </div>
             ) : (
@@ -702,7 +694,7 @@ export const OrdersPage: React.FC = () => {
               </div>
             )}
             {getOutstandingOrderItems(returnOrder).some(item => item.quantity - (returnQuantities[item.gearId] || 0) > 0) && (
-              <p className="mt-3 text-[10px] text-gray-500">Closing with items outstanding moves the order to payment pending. Unreturned items remain unavailable in stock and are listed as missing for audit.</p>
+              <p className="mt-3 text-[10px] text-gray-500">If anything is missing, record it to keep this order open and visible for follow-up. Payment becomes pending only after all items are returned.</p>
             )}
           </section>
         </div>

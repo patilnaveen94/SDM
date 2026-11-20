@@ -1,4 +1,5 @@
 import { getScopedStorageKey } from './dataStore';
+import { persistBusinessCollection } from './backend';
 
 /**
  * Media/Content configuration store.
@@ -45,6 +46,7 @@ export function updateMediaConfig(updates: Partial<MediaConfig>): MediaConfig {
   const current = getMediaConfig();
   const updated = { ...current, ...updates };
   localStorage.setItem(getScopedStorageKey(KEY), JSON.stringify(updated));
+  persistBusinessCollection(KEY, updated);
   return updated;
 }
 
@@ -52,10 +54,12 @@ export function addPortfolioItem(item: Omit<MediaConfig['portfolioItems'][0], 'i
   const config = getMediaConfig();
   config.portfolioItems.push({ ...item, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) });
   localStorage.setItem(getScopedStorageKey(KEY), JSON.stringify(config));
+  persistBusinessCollection(KEY, config);
 }
 
 export function deletePortfolioItem(id: string): void {
   const config = getMediaConfig();
   config.portfolioItems = config.portfolioItems.filter(p => p.id !== id);
   localStorage.setItem(getScopedStorageKey(KEY), JSON.stringify(config));
+  persistBusinessCollection(KEY, config);
 }

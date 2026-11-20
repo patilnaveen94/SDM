@@ -1,26 +1,39 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminLogin } from '../store/dataStore';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export const AdminLogin: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminLogin(username, password)) {
-      navigate('/admin/dashboard');
-    } else {
-      setError('Invalid credentials');
-      setTimeout(() => setError(''), 3000);
+    setSubmitting(true);
+    setError('');
+    try {
+      const result = await adminLogin(email.trim(), password);
+      if (result.success) {
+        navigate('/admin/dashboard');
+      } else {
+        setError(result.message || 'Unable to sign in.');
+      }
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : 'Unable to sign in. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-obsidian flex items-center justify-center px-4">
       <div className="w-full max-w-md">
+        <div className="mb-5 flex justify-end">
+          <ThemeToggle />
+        </div>
         <div className="text-center mb-8">
           <h1 className="text-2xl font-heading font-bold text-white">SDM Admin</h1>
           <p className="text-gray-500 text-sm mt-2">Sign in to manage your business</p>
@@ -33,13 +46,15 @@ export const AdminLogin: React.FC = () => {
             </div>
           )}
           <div>
-            <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">Username</label>
+            <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">Admin email</label>
             <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-gold focus:outline-none transition-colors"
               autoFocus
+              autoComplete="username"
+              required
             />
           </div>
           <div>
@@ -49,10 +64,12 @@ export const AdminLogin: React.FC = () => {
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-gold focus:outline-none transition-colors"
+              autoComplete="current-password"
+              required
             />
           </div>
-          <button type="submit" className="w-full py-3 rounded-xl bg-gold text-obsidian font-bold hover:bg-gold-light transition-colors">
-            Sign In
+          <button type="submit" disabled={submitting} className="w-full py-3 rounded-xl bg-gold text-obsidian font-bold hover:bg-gold-light transition-colors disabled:cursor-wait disabled:opacity-70">
+            {submitting ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
       </div>

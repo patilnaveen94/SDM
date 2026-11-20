@@ -58,6 +58,7 @@ export const DashboardPage: React.FC = () => {
   const overdueOrders = getOverdueOrders();
   const pendingPayment = getPendingPaymentOrders();
   const partiallyReturned = getPartiallyReturnedOrders();
+  const missingFollowUps = partiallyReturned.filter(order => (order.missingItems?.length || 0) > 0);
   const savedCustomers = getCustomerProfiles();
   const customersByPhone = new Map(savedCustomers.map(customer => [customer.phone, {
     name: customer.name,
@@ -107,7 +108,7 @@ export const DashboardPage: React.FC = () => {
       title,
       rows: selectedOrders.map(order => ({
         title: order.customerName,
-        description: `${order.status === 'partially_returned' ? `Still out: ${getOutstandingOrderItems(order).map(item => `${item.gearName} ×${item.quantity}`).join(', ')} · ` : ''}${order.missingItems?.length ? `Missing: ${order.missingItems.map(item => `${item.gearName} ×${item.quantity}`).join(', ')} · ` : ''}${order.items.map(item => `${item.gearName} ×${item.quantity}`).join(', ')} · ${order.startDate} – ${order.endDate}${order.missingNote ? ` · Closeout note: ${order.missingNote}` : order.partialReturns?.length ? ` · Note: ${order.partialReturns[order.partialReturns.length - 1].note}` : ''}`,
+        description: `${order.status === 'partially_returned' ? `Still out: ${getOutstandingOrderItems(order).map(item => `${item.gearName} ×${item.quantity}`).join(', ')} · ` : ''}${order.missingItems?.length ? `Missing: ${order.missingItems.map(item => `${item.gearName} ×${item.quantity}`).join(', ')} · ` : ''}${order.items.map(item => `${item.gearName} ×${item.quantity}`).join(', ')} · ${order.startDate} – ${order.endDate}${order.missingNote ? ` · Follow-up note: ${order.missingNote}` : order.partialReturns?.length ? ` · Note: ${order.partialReturns[order.partialReturns.length - 1].note}` : ''}`,
         value: `₹${order.totalAmount.toLocaleString('en-IN')}`,
         returnOrderId: order.status === 'active' || order.status === 'partially_returned' ? order.id : undefined,
       })),
@@ -203,12 +204,39 @@ export const DashboardPage: React.FC = () => {
     { label: 'Overdue Returns', value: overdueOrders.length, icon: '⚠️', color: 'text-red-400', onClick: () => showOrders('Overdue returns', overdueOrders) },
     { label: 'Pending Payments', value: pendingPayment.length, icon: '💳', color: 'text-yellow-400', onClick: () => showOrders('Pending payments', pendingPayment) },
     { label: 'Partially Returned', value: partiallyReturned.length, icon: '📥', color: 'text-orange-300', onClick: () => showOrders('Partially returned orders', partiallyReturned) },
-    { label: 'Missing / Written Off', value: missingUnits, icon: '⚠️', color: 'text-red-300', onClick: () => showInventory('Missing or written-off gear', 'missing') },
+    { label: 'Missing Gear Follow-ups', value: missingFollowUps.length, icon: '🔔', color: 'text-red-300', onClick: () => showOrders('Open missing gear follow-ups', missingFollowUps) },
+    { label: 'Missing / Written Off Stock', value: missingUnits, icon: '⚠️', color: 'text-red-300', onClick: () => showInventory('Missing or written-off gear', 'missing') },
     { label: 'Customers', value: customers.length, icon: '👥', color: 'text-cyan-400', onClick: showCustomers },
     { label: 'Online Enquiries', value: onlineEnquiries.length, icon: '🛒', color: 'text-amber-400', onClick: showQuotes },
     { label: 'Saved Quotations', value: savedQuotations.length, icon: '📄', color: 'text-blue-300', onClick: showSavedQuotations },
     { label: 'Total Gear Items', value: inventory.length, icon: '🎬', color: 'text-gray-300', onClick: showAllGear },
   ];
+  const priorityStats = stats.filter(stat => ['Rent Out', 'Delivery Today', 'Receive Today', 'Overdue Returns'].includes(stat.label));
+  const businessStats = stats.filter(stat => !priorityStats.includes(stat));
+  const renderStats = (items: typeof stats) => (
+    <div className="grid grid-cols-1 min-[360px]:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      {items.map(stat => (
+        <button
+          type="button"
+          key={stat.label}
+          onClick={stat.onClick}
+          aria-label={`View details for ${stat.label}`}
+          className="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-left transition-colors hover:border-gold/40 hover:bg-white/[0.05] focus:outline-none focus:ring-2 focus:ring-gold/50 sm:p-5"
+        >
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-2xl">{stat.icon}</span>
+            <span className="text-[10px] font-medium text-gray-500 opacity-0 transition-opacity group-hover:opacity-100">View →</span>
+          </div>
+          <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+          <div className="mt-1 text-xs font-medium text-gray-500">{stat.label}</div>
+        </button>
+      ))}
+    </div>
+  );
+  const generalActiveOrders = activeOrders.filter(order =>
+    !overdueOrders.some(overdue => overdue.id === order.id)
+    && !missingFollowUps.some(missing => missing.id === order.id),
+  );
 
   return (
     <div>
@@ -225,22 +253,14 @@ export const DashboardPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-10">
-        {stats.map(stat => (
-          <button
-            type="button"
-            key={stat.label}
-            onClick={stat.onClick}
-            aria-label={`View details for ${stat.label}`}
-            className="text-left bg-white/[0.03] border border-white/5 rounded-2xl p-4 sm:p-5 hover:border-gold/40 hover:bg-white/[0.05] transition-colors focus:outline-none focus:ring-2 focus:ring-gold/50"
-          >
-            <div className="text-2xl mb-2">{stat.icon}</div>
-            <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
-            <div className="text-xs text-gray-500 mt-1">{stat.label}</div>
-            <div className="text-[10px] text-gray-600 mt-2">Click to view details</div>
-          </button>
-        ))}
-      </div>
+      <section className="mb-8">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">Today &amp; immediate attention</h2>
+        {renderStats(priorityStats)}
+      </section>
+      <section className="mb-8">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">Business snapshot</h2>
+        {renderStats(businessStats)}
+      </section>
 
       <div className="mb-8">
         <Link to="/admin/inventory" className="inline-flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/5 px-4 py-3 text-sm font-medium text-gold hover:bg-gold/10">
@@ -288,6 +308,27 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
+      {missingFollowUps.length > 0 && (
+        <section className="mb-8 rounded-2xl border border-red-500/20 bg-red-500/5 p-4 sm:p-5">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-red-400">🔔 Missing gear — order remains open</h2>
+            <p className="mt-1 text-xs text-gray-500">These orders stay active until every item is received. This reminder remains here for staff follow-up.</p>
+          </div>
+          <div className="space-y-3">
+            {missingFollowUps.map(order => (
+              <div key={order.id} className="flex flex-col gap-3 rounded-xl border border-red-500/10 bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">{order.customerName} <span className="text-gray-500">· {order.customerPhone}</span></p>
+                  <p className="mt-1 text-xs text-gray-400">Still out: {getOutstandingOrderItems(order).map(item => `${item.gearName} ×${item.quantity}`).join(', ')}</p>
+                  {order.missingNote && <p className="mt-1 text-xs text-red-300">Last note: {order.missingNote}</p>}
+                </div>
+                <button onClick={() => handleReceiveItem(order.id)} className="rounded-lg bg-red-500/10 px-4 py-2 text-xs font-bold text-red-400 transition-colors hover:bg-red-500/20">Record follow-up</button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {pendingPayment.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-yellow-400 mb-4">💳 Pending Payments — Items Returned</h2>
@@ -308,11 +349,11 @@ export const DashboardPage: React.FC = () => {
 
       <div>
         <h2 className="text-lg font-semibold text-white mb-4">🔥 Active Orders — Items Out</h2>
-        {activeOrders.length === 0 ? (
-          <p className="text-gray-500 text-sm py-6">No active orders. All items are back.</p>
+        {generalActiveOrders.length === 0 ? (
+          <p className="text-gray-500 text-sm py-6">{activeOrders.length === 0 ? 'No active orders. All items are back.' : 'No other active orders to show.'}</p>
         ) : (
           <div className="space-y-3">
-            {activeOrders.filter(order => !overdueOrders.find(overdue => overdue.id === order.id)).map(order => (
+            {generalActiveOrders.map(order => (
               <div key={order.id} className="bg-white/[0.03] border border-white/5 rounded-xl p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-white font-medium text-sm">{order.customerName} <span className="text-gray-500">• {order.customerPhone}</span></p>

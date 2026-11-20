@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { enableDemoMode, isAdminLoggedIn, isDemoModeEnabled, adminLogout } from '../store/dataStore';
+import { ThemeToggle } from '../components/ThemeToggle';
+import { hasLegacyStateBackup, importLegacyStateBackup } from '../store/backend';
 
 const navItems = [
   { label: 'Dashboard', path: '/admin/dashboard', icon: '📊' },
@@ -17,13 +19,32 @@ const navItems = [
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [legacyBackupAvailable, setLegacyBackupAvailable] = useState(hasLegacyStateBackup());
+  const [actionError, setActionError] = useState('');
   const demoMode = isDemoModeEnabled();
 
   if (!isAdminLoggedIn()) {
     return <Navigate to="/admin" replace />;
   }
 
-  const handleLogout = () => { adminLogout(); navigate('/admin'); };
+  const handleLogout = async () => {
+    try {
+      await adminLogout();
+      navigate('/admin');
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to sign out.');
+    }
+  };
+  const handleLegacyImport = async () => {
+    if (!window.confirm('Import the records saved in this browser into the empty Supabase database? This cannot be undone.')) return;
+    try {
+      await importLegacyStateBackup();
+      setLegacyBackupAvailable(false);
+      window.location.reload();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to import the browser backup.');
+    }
+  };
   const handleDemoModeToggle = () => {
     enableDemoMode(!demoMode);
     window.location.reload();
@@ -49,6 +70,15 @@ export const AdminLayout: React.FC = () => {
           {demoMode ? 'Switch to live data' : 'Switch to demo data'}
         </button>
       </div>
+      {legacyBackupAvailable && !demoMode && (
+        <div className="mx-3 mt-3 rounded-xl border border-amber-400/20 bg-amber-500/5 p-3">
+          <p className="text-xs font-semibold text-amber-200">Browser data backup found</p>
+          <p className="mt-1 text-[10px] leading-relaxed text-gray-400">The Supabase database is empty. Import the old records from this device before continuing.</p>
+          <button onClick={handleLegacyImport} className="mt-2 w-full rounded-lg border border-amber-400/20 px-3 py-2 text-xs font-medium text-amber-100 hover:bg-amber-500/10">
+            Import browser data
+          </button>
+        </div>
+      )}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navItems.map(item => (
           <NavLink
@@ -86,14 +116,15 @@ export const AdminLayout: React.FC = () => {
           className="p-2 rounded-lg hover:bg-white/5"
         >
           <div className="w-5 h-4 flex flex-col justify-between">
-            <span className={`h-px w-full bg-white transition-all ${sidebarOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
-            <span className={`h-px w-full bg-white transition-all ${sidebarOpen ? 'opacity-0' : ''}`} />
-            <span className={`h-px w-full bg-white transition-all ${sidebarOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
+            <span className={`theme-menu-line h-px w-full bg-white transition-all ${sidebarOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
+            <span className={`theme-menu-line h-px w-full bg-white transition-all ${sidebarOpen ? 'opacity-0' : ''}`} />
+            <span className={`theme-menu-line h-px w-full bg-white transition-all ${sidebarOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
           </div>
         </button>
         <span className="text-sm font-heading font-bold text-gold">
           SDM Admin{demoMode && <span className="ml-1 text-[9px] text-blue-300">DEMO</span>}
         </span>
+        <ThemeToggle compact />
         <button onClick={handleLogout} className="text-xs text-gray-400">Logout</button>
       </div>
 
@@ -109,6 +140,10 @@ export const AdminLayout: React.FC = () => {
 
       {/* Main content */}
       <main className="lg:ml-64 p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 min-h-screen overflow-x-hidden">
+        {actionError && <p role="alert" className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">{actionError}</p>}
+        <div className="mb-4 hidden justify-end lg:mb-5 lg:flex">
+          <ThemeToggle />
+        </div>
         <Outlet />
       </main>
     </div>

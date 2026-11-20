@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { businessInfo, webNavItems } from '../assetsConfig';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,16 +43,19 @@ export const Navbar: React.FC = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-500 ${
+        className={`public-navigation fixed left-0 right-0 top-0 z-50 transition-all duration-500 ${
           isScrolled
-            ? 'bg-obsidian/80 backdrop-blur-2xl border-b border-white/5'
+            ? 'bg-black/70 backdrop-blur-2xl border-b border-white/5'
             : 'bg-transparent'
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-3 md:h-20">
-            <motion.a href="#hero" aria-label={`${businessInfo.name}, home`} onClick={(e) => handleNavClick(e, '#hero')} whileHover={{ scale: 1.02 }} className="min-w-0">
-              <span className="block truncate text-base font-heading font-bold text-white sm:text-lg md:text-xl">
+            <motion.a href="#hero" aria-label={`${businessInfo.name}, home`} onClick={(e) => handleNavClick(e, '#hero')} whileHover={{ scale: 1.02 }} className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+              <span className="brand-logo-crop header-brand-logo h-11 w-14 shrink-0 rounded-lg border border-white/15 bg-black/90 shadow-md sm:h-12 sm:w-16">
+                <img src="/sdm-productions-logo.png" alt="SDM Productions logo" className="h-full w-full object-cover" />
+              </span>
+              <span className="block truncate text-sm font-heading font-bold text-white sm:text-base md:text-lg">
                 {businessInfo.name}
               </span>
             </motion.a>
@@ -74,6 +78,7 @@ export const Navbar: React.FC = () => {
               >
                 Call Now
               </a>
+              <ThemeToggle />
             </div>
 
             <a href="#booking" onClick={(e) => handleNavClick(e, '#booking')} className="ml-auto hidden min-h-11 items-center justify-center rounded-full bg-gold px-5 text-xs font-bold uppercase tracking-wider text-obsidian transition-colors hover:bg-gold-light md:inline-flex lg:ml-0">
@@ -90,9 +95,9 @@ export const Navbar: React.FC = () => {
               aria-controls="mobile-navigation"
             >
               <div className="flex h-4 w-5 flex-col justify-between">
-                <span className={`h-px w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
-                <span className={`h-px w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`} />
-                <span className={`h-px w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
+                <span className={`theme-menu-line h-px w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
+                <span className={`theme-menu-line h-px w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`} />
+                <span className={`theme-menu-line h-px w-full bg-white transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
               </div>
             </button>
           </div>
@@ -140,9 +145,12 @@ export const Navbar: React.FC = () => {
                 </motion.a>
               ))}
             </nav>
-            <div className="mt-auto grid grid-cols-2 gap-3 pt-8">
+            <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-8">
+              <ThemeToggle />
+              <div className="grid flex-1 grid-cols-2 gap-3">
               <a href="#booking" onClick={(e) => handleNavClick(e, '#booking')} className="flex min-h-12 items-center justify-center rounded-full bg-gold px-4 text-sm font-bold text-obsidian">Explore services</a>
               <a href={`tel:${businessInfo.phone}`} className="flex min-h-12 items-center justify-center rounded-full border border-white/15 px-4 text-sm font-semibold text-white">Call us</a>
+              </div>
             </div>
           </motion.div>
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import { rentalCatalog, RentalGear } from '../config/assetsConfig';
+import { fetchPublicRentalCatalog } from '../config/supabase';
 import { SectionHeader } from '../components/SectionHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -27,12 +28,31 @@ export const BookingScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [gearCatalog, setGearCatalog] = useState<RentalGear[]>(rentalCatalog);
+  const [catalogReady, setCatalogReady] = useState(false);
+  const [catalogError, setCatalogError] = useState('');
 
-  const categories = ['all', 'camera', 'lens', 'anamorphic', 'drone', 'lighting'];
+  useEffect(() => {
+    let active = true;
+    fetchPublicRentalCatalog()
+      .then(items => {
+        if (!active) return;
+        setGearCatalog(items);
+        setCatalogReady(true);
+        setCatalogError('');
+      })
+      .catch(error => {
+        if (!active) return;
+        setCatalogError(error instanceof Error ? error.message : 'Live inventory is unavailable.');
+      });
+    return () => { active = false; };
+  }, []);
+
+  const categories = ['all', 'camera', 'lens', 'anamorphic', 'drone', 'lighting', 'gimbal', 'audio', 'accessory'];
 
   const filteredGear = selectedCategory === 'all'
-    ? rentalCatalog
-    : rentalCatalog.filter((g) => g.category === selectedCategory);
+    ? gearCatalog
+    : gearCatalog.filter((g) => g.category === selectedCategory);
 
   const addToCart = (gear: RentalGear) => {
     if (cart.find((item) => item.gear.id === gear.id)) {
@@ -81,10 +101,10 @@ export const BookingScreen: React.FC = () => {
               style={[
                 styles.cartButton,
                 isInCart && styles.cartButtonActive,
-                !item.available && styles.cartButtonDisabled,
+                (!item.available || !catalogReady) && styles.cartButtonDisabled,
               ]}
               onPress={() => isInCart ? removeFromCart(item.id) : addToCart(item)}
-              disabled={!item.available}
+              disabled={!item.available || !catalogReady}
               activeOpacity={0.7}
             >
               <Feather
@@ -106,6 +126,14 @@ export const BookingScreen: React.FC = () => {
         goldWord="Rental"
         subtitle="Premium cinema equipment at daily rates"
       />
+
+      {catalogError ? (
+        <Text accessibilityRole="alert" style={styles.catalogWarning}>
+          {catalogError} Preview gear is shown; live availability is not confirmed.
+        </Text>
+      ) : !catalogReady ? (
+        <Text style={styles.catalogStatus}>Loading live inventory…</Text>
+      ) : null}
 
       {/* Category Filter */}
       <FlatList
@@ -162,6 +190,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0A0A0A',
+  },
+  catalogWarning: {
+    color: '#FBBF24',
+    fontSize: 12,
+    lineHeight: 18,
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  catalogStatus: {
+    color: '#A0A0A0',
+    fontSize: 12,
+    marginHorizontal: 20,
+    marginBottom: 10,
   },
   categoryChip: {
     paddingHorizontal: 14,

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useTransform, useInView } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, useReducedMotion } from 'framer-motion';
 import { businessInfo } from '../assetsConfig';
 import { getMediaConfig } from '../store/mediaStore';
 
@@ -7,10 +7,16 @@ import { getMediaConfig } from '../store/mediaStore';
 const AnimatedCounter: React.FC<{ value: number; suffix?: string; label: string }> = ({ value, suffix = '', label }) => {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true });
+  const shouldReduceMotion = useReducedMotion();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
+    if (shouldReduceMotion) {
+      setCount(value);
+      return;
+    }
     if (!isInView) return;
+
     let start = 0;
     const duration = 2000;
     const increment = value / (duration / 16);
@@ -24,10 +30,10 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; label: string 
       }
     }, 16);
     return () => clearInterval(timer);
-  }, [isInView, value]);
+  }, [isInView, shouldReduceMotion, value]);
 
   return (
-    <div ref={ref} className="rounded-2xl border border-white/5 bg-white/[0.025] px-2 py-4 text-center sm:px-4 sm:py-5 md:border-0 md:bg-transparent">
+    <div ref={ref} className="about-stat-card rounded-2xl border border-white/5 bg-white/[0.025] px-2 py-4 text-center sm:px-4 sm:py-5 md:border-0 md:bg-transparent">
       <div className="text-3xl font-heading font-bold text-gold-gradient sm:text-4xl md:text-6xl">
         {count}{suffix}
       </div>
@@ -40,6 +46,7 @@ export const About: React.FC = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: '-15%' });
+  const shouldReduceMotion = useReducedMotion();
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -52,14 +59,14 @@ export const About: React.FC = () => {
   const media = getMediaConfig();
 
   return (
-    <section id="about" ref={sectionRef} className="scroll-mt-20 relative overflow-hidden">
+    <section id="about" ref={sectionRef} className="about-section scroll-mt-20 relative overflow-hidden">
       {/* Full-width cinematic stats bar (OnePlus KSP style) */}
       <div className="border-b border-white/5 py-10 sm:py-14 md:py-20">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 sm:gap-4 md:grid-cols-4 md:gap-5">
-          <AnimatedCounter value={10} suffix="+" label="Years Experience" />
-          <AnimatedCounter value={500} suffix="+" label="Events Captured" />
-          <AnimatedCounter value={200} suffix="+" label="Students Trained" />
-          <AnimatedCounter value={150} suffix="+" label="Gear Collection" />
+          <AnimatedCounter value={13} suffix="+" label="Years Experience" />
+          <AnimatedCounter value={4} label="Featured Film Credits" />
+          <AnimatedCounter value={6} suffix="+" label="Client Organizations" />
+          <AnimatedCounter value={3} label="Production Specialties" />
         </div>
       </div>
 
@@ -92,13 +99,13 @@ export const About: React.FC = () => {
           <motion.div
             ref={imageRef}
             style={{ scale: imageScale, rotate: imageRotate }}
-            className="relative mx-auto w-full max-w-lg"
+            className="about-founder-photo relative mx-auto w-full max-w-lg"
           >
             <div className="relative aspect-[4/4.5] overflow-hidden rounded-3xl sm:aspect-[4/5]">
               <motion.img
                 src={media.founderImage}
                 alt={businessInfo.founder.name}
-                className="w-full h-full object-cover"
+                className="about-founder-image w-full h-full object-cover"
                 style={{ y: parallaxY }}
               />
               {/* Gradient overlay at bottom */}
@@ -160,6 +167,128 @@ export const About: React.FC = () => {
               </a>
             </motion.div>
           </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8 lg:pb-28">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          <motion.article
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.18 }}
+            transition={{ duration: 0.65, ease: [0.2, 0.7, 0.2, 1] }}
+            whileHover={shouldReduceMotion ? undefined : { y: -5 }}
+            className="about-info-card rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-7"
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Selected Filmography</p>
+            <ul className="mt-5 space-y-3">
+              {businessInfo.founder.filmography.map(film => (
+                <li key={film.title} className="flex flex-col justify-between gap-1 border-b border-white/5 pb-3 last:border-0 sm:flex-row sm:items-center">
+                  <span className="font-medium text-white">{film.title}</span>
+                  <span className="text-xs text-gray-400">{film.role}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.article>
+
+          <motion.article
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.18 }}
+            transition={{ duration: 0.65, delay: 0.1, ease: [0.2, 0.7, 0.2, 1] }}
+            whileHover={shouldReduceMotion ? undefined : { y: -5 }}
+            className="about-info-card rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-7"
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Core Expertise</p>
+            <ul className="mt-5 space-y-3">
+              {businessInfo.founder.credentials.map(expertise => (
+                <li key={expertise} className="flex gap-3 text-sm leading-6 text-gray-300">
+                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gold" />
+                  {expertise}
+                </li>
+              ))}
+            </ul>
+          </motion.article>
+        </div>
+
+        <motion.article
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.12 }}
+          transition={{ duration: 0.65, ease: [0.2, 0.7, 0.2, 1] }}
+          className="about-info-card mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:mt-6 sm:p-7"
+        >
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Premium Clientele & Vendor Portfolio</p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {businessInfo.founder.clientele.map(clientGroup => (
+              <motion.div
+                key={clientGroup.category}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : 0.08 }}
+                whileHover={shouldReduceMotion ? undefined : { y: -3 }}
+                className="about-client-card rounded-xl border border-white/5 bg-black/20 p-4"
+              >
+                <p className="text-sm font-semibold text-white">{clientGroup.category}</p>
+                <p className="mt-2 text-sm leading-6 text-gray-300">{clientGroup.organizations.join(' · ')}</p>
+                <p className="mt-2 text-xs text-gray-500">{clientGroup.relationship}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.article>
+
+        <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-2">
+          <motion.article
+            initial={shouldReduceMotion ? false : { opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.6 }}
+            whileHover={shouldReduceMotion ? undefined : { y: -4 }}
+            className="about-info-card rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-7"
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Work History</p>
+            <div className="mt-5 space-y-5">
+              {businessInfo.founder.workHistory.map(position => (
+                <div key={`${position.role}-${position.organization}`} className="border-l border-gold/40 pl-4">
+                  <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-baseline">
+                    <h3 className="text-sm font-semibold text-white">{position.role}</h3>
+                    {position.period && <span className="text-xs text-gray-500">{position.period}</span>}
+                  </div>
+                  <p className="mt-1 text-xs text-gold">{position.organization}</p>
+                  <p className="mt-2 text-sm leading-6 text-gray-400">{position.description}</p>
+                </div>
+              ))}
+            </div>
+          </motion.article>
+
+          <motion.article
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.6 }}
+            whileHover={shouldReduceMotion ? undefined : { y: -4 }}
+            className="about-info-card rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-7"
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Services & Bookings</p>
+            <div className="mt-5 space-y-5">
+              {businessInfo.founder.services.map(service => (
+                <div key={service.category}>
+                  <h3 className="text-sm font-semibold text-white">{service.category}</h3>
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {service.offerings.map(offering => (
+                      <li key={offering} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300">{offering}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 border-t border-white/10 pt-5">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Contact</p>
+              <p className="mt-2 text-sm text-gray-300">Bengaluru, India · +91 {businessInfo.phone}</p>
+              <a href={`mailto:${businessInfo.email}`} className="mt-1 inline-block break-all text-sm text-gold hover:underline">{businessInfo.email}</a>
+            </div>
+          </motion.article>
         </div>
       </div>
     </section>

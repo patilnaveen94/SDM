@@ -62,6 +62,10 @@ export interface BusinessInfo {
     title: string;
     bio: string;
     credentials: string[];
+    filmography: { title: string; role: string }[];
+    clientele: { category: string; organizations: string[]; relationship: string }[];
+    workHistory: { role: string; organization: string; period?: string; description: string }[];
+    services: { category: string; offerings: string[] }[];
     profileImage: string;
   };
 }
@@ -71,7 +75,7 @@ export const businessInfo: BusinessInfo = {
   tagline: 'Capturing Moments. Engineering Visuals. Training the Next Generation.',
   phone: '9060606023',
   whatsapp: '8151830115',
-  email: 'info@sdmcamerasolutions.com',
+  email: 'sandeepdft@gmail.com',
   address: 'H P World, 1639, Mahakavi Kuvempu Rd, beside Bengaluru, Mariappanapalya, Rajajinagar, Bengaluru, Karnataka 560021',
   socials: {
     instagram: 'https://instagram.com/sdmcamerasolutions',
@@ -79,15 +83,35 @@ export const businessInfo: BusinessInfo = {
     linkedin: 'https://linkedin.com/company/sdmcamerasolutions',
   },
   founder: {
-    name: 'SDM',
-    title: 'Elite Cinematographer & Master Trainer',
-    bio: 'With over a decade of experience in professional cinematography, SDM has trained hundreds of aspiring filmmakers across prestigious government institutes. A visionary who bridges the gap between traditional photography mastery and cutting-edge cinema technology.',
+    name: 'Sandeep Hanchin',
+    title: 'Director of Photography (DoP) | Cinematographer',
+    bio: 'A premium Director of Photography with 13+ years of experience bridging mainstream Kannada cinema and corporate production. Specializing in high-end visuals, production technology and logistics, and narrative innovation. Founder of SDM Camera Rentals in Rajajinagar and former academic mentor at the Government Film and Television Institute (GFTI), Hesaraghatta.',
     credentials: [
-      'Certified Cinematography Instructor — Government Film Institute',
-      'Master Trainer — National Skill Development Programme',
-      'Award-Winning Wedding & Event Cinematographer',
-      'Professional Equipment Consultant & Rental Specialist',
-      'Guest Faculty — State Institute of Film & Television',
+      'Feature film cinematography, visual storytelling, lighting, framing, and continuity',
+      'Commercial and broadcast production to global brand benchmarks',
+      'Technical direction across ARRI, RED, Sony FX systems, and complex optics',
+      'Academic lectures and mentorship for emerging camera professionals',
+    ],
+    filmography: [
+      { title: 'Hulibeera (2026)', role: 'Director of Photography' },
+      { title: 'C++', role: 'Director of Photography' },
+      { title: 'Antarjala (ಅಂತರ್ಜಲಾ)', role: 'Director of Photography' },
+      { title: 'Kollegala (ಕೊಳ್ಳೇಗಾಲ)', role: 'Director of Photography' },
+    ],
+    clientele: [
+      { category: 'Global tech & e-commerce', organizations: ['Google', 'Flipkart'], relationship: 'Sub-vendor' },
+      { category: 'National broadcast networks', organizations: ['Times Network', 'Network-18'], relationship: 'Empanelled vendor' },
+      { category: 'Industrial & corporate brands', organizations: ['WMG Bangalore', 'ACE Designers Bangalore'], relationship: 'Premium corporate projects' },
+    ],
+    workHistory: [
+      { role: 'Freelance Director of Photography', organization: 'Independent productions', period: '2013 – Present', description: 'Designs camera, lighting, and movement workflows for narrative features, commercials, and documentaries; leads technical production logistics for corporate operations.' },
+      { role: 'Founder & Technical Director', organization: 'SDM Camera Rentals, Bengaluru', description: 'Curates and supplies professional cinema equipment, consulting on production technology and camera packages for South Indian productions.' },
+      { role: 'Faculty Member (Part-Time)', organization: 'Government Film and Television Institute (GFTI), Hesaraghatta', description: 'Mentored students on digital sensors, lighting, and contemporary production workflows.' },
+    ],
+    services: [
+      { category: 'Cinematography', offerings: ['Feature films', 'Commercial advertisements', 'Documentaries'] },
+      { category: 'Production coverage', offerings: ['Corporate AVs', 'Broadcasting events', 'Live music and event coverage'] },
+      { category: 'Camera & technical direction', offerings: ['Cinema camera systems', 'Lighting workflows', 'Production equipment consulting'] },
     ],
     profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
   },
@@ -615,7 +639,6 @@ export interface NavItem {
 export const webNavItems: NavItem[] = [
   { label: 'Home', href: '#hero' },
   { label: 'About', href: '#about' },
-  { label: 'Portfolio', href: '#portfolio' },
   { label: 'Booking', href: '#booking' },
   { label: 'Academy', href: '#academy' },
   { label: 'Partners', href: '#partners' },

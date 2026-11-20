@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import { businessInfo, eventPackages, EventPackage } from '../assetsConfig';
-import { addQuoteRequest, calculateDays, getGearInventory as getAdminGear } from '../store/dataStore';
+import { submitPublicQuoteRequest, calculateDays, getGearInventory as getAdminGear } from '../store/dataStore';
 
 type TabKey = 'events' | 'rental';
 
@@ -77,6 +77,8 @@ export const BookingEngine: React.FC = () => {
   const [formData, setFormData] = useState<BookingFormData>({ name: '', phone: '', email: '', eventType: '', date: '', message: '' });
   const [formErrors, setFormErrors] = useState<Partial<BookingFormData>>({});
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [rentalStartDate, setRentalStartDate] = useState('');
   const [rentalEndDate, setRentalEndDate] = useState('');
   const [rentalErrors, setRentalErrors] = useState<Record<string, string>>({});
@@ -121,10 +123,13 @@ export const BookingEngine: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      addQuoteRequest({
+    if (!validateForm()) return;
+    setIsSubmittingRequest(true);
+    setSubmitError('');
+    try {
+      await submitPublicQuoteRequest({
         customerName: formData.name.trim(),
         customerPhone: formData.phone,
         customerEmail: formData.email,
@@ -136,6 +141,10 @@ export const BookingEngine: React.FC = () => {
       setTimeout(() => setFormSubmitted(false), 3000);
       setFormData({ name: '', phone: '', email: '', eventType: '', date: '', message: '' });
       setSelectedPackage(null);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Your request could not be sent. Please try again or call us.');
+    } finally {
+      setIsSubmittingRequest(false);
     }
   };
 
@@ -157,7 +166,7 @@ export const BookingEngine: React.FC = () => {
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const handleRentalSubmit = (e: React.FormEvent) => {
+  const handleRentalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
     if (!formData.name.trim()) errors.name = 'Enter your name';
@@ -171,27 +180,35 @@ export const BookingEngine: React.FC = () => {
     setRentalErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    addQuoteRequest({
-      requestType: 'rental',
-      customerName: formData.name.trim(),
-      customerPhone: formData.phone.trim(),
-      customerEmail: formData.email.trim(),
-      eventType: 'Gear Rental',
-      requestedDate: rentalStartDate,
-      requestedEndDate: rentalEndDate,
-      rentalItems: cart.map(item => ({
-        gearId: item.id,
-        gearName: item.name,
-        quantity: item.quantity,
-        dailyRate: item.dailyRate,
-      })),
-      estimatedTotal: cartTotal,
-      message: formData.message.trim(),
-    });
-    setRentalSubmitted(true);
-    setCart([]);
-    setFormData({ name: '', phone: '', email: '', eventType: '', date: '', message: '' });
-    setRentalErrors({});
+    setIsSubmittingRequest(true);
+    setSubmitError('');
+    try {
+      await submitPublicQuoteRequest({
+        requestType: 'rental',
+        customerName: formData.name.trim(),
+        customerPhone: formData.phone.trim(),
+        customerEmail: formData.email.trim(),
+        eventType: 'Gear Rental',
+        requestedDate: rentalStartDate,
+        requestedEndDate: rentalEndDate,
+        rentalItems: cart.map(item => ({
+          gearId: item.id,
+          gearName: item.name,
+          quantity: item.quantity,
+          dailyRate: item.dailyRate,
+        })),
+        estimatedTotal: cartTotal,
+        message: formData.message.trim(),
+      });
+      setRentalSubmitted(true);
+      setCart([]);
+      setFormData({ name: '', phone: '', email: '', eventType: '', date: '', message: '' });
+      setRentalErrors({});
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Your request could not be sent. Please try again or call us.');
+    } finally {
+      setIsSubmittingRequest(false);
+    }
   };
 
   const closeCart = () => {
@@ -204,6 +221,7 @@ export const BookingEngine: React.FC = () => {
   return (
     <section id="booking" ref={sectionRef} className="scroll-mt-20 py-16 sm:py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {submitError && <p role="alert" className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">{submitError}</p>}
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -365,8 +383,8 @@ export const BookingEngine: React.FC = () => {
                     <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className={inputClasses} />
                     {formErrors.date && <p className="text-red-400 text-xs -mt-2">{formErrors.date}</p>}
                     <textarea placeholder="Additional details (optional)" value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} rows={3} className={inputClasses + ' resize-none'} />
-                    <button type="submit" className="w-full py-4 rounded-xl bg-gold text-obsidian font-bold text-base hover:bg-gold-light transition-colors">
-                      Check Availability
+                    <button type="submit" disabled={isSubmittingRequest} className="w-full py-4 rounded-xl bg-gold text-obsidian font-bold text-base hover:bg-gold-light transition-colors disabled:cursor-wait disabled:opacity-70">
+                      {isSubmittingRequest ? 'Sending…' : 'Check Availability'}
                     </button>
                   </form>
                 )}
@@ -615,8 +633,8 @@ export const BookingEngine: React.FC = () => {
                     <p className="mt-2 text-[11px] leading-5 text-gray-500">This is an enquiry, not a confirmed booking. Final availability and pricing will be confirmed by our team.</p>
                   </div>
 
-                  <button type="submit" className="w-full rounded-xl bg-gold px-5 py-4 text-sm font-bold text-obsidian transition-colors hover:bg-gold-light">
-                    Send rental enquiry
+                  <button type="submit" disabled={isSubmittingRequest} className="w-full rounded-xl bg-gold px-5 py-4 text-sm font-bold text-obsidian transition-colors hover:bg-gold-light disabled:cursor-wait disabled:opacity-70">
+                    {isSubmittingRequest ? 'Sending…' : 'Send rental enquiry'}
                   </button>
                 </form>
               )}

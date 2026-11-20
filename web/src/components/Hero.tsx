@@ -19,6 +19,7 @@ export const Hero: React.FC = () => {
   return (
     <section
       id="hero"
+      data-theme-contrast="true"
       ref={containerRef}
       className="relative min-h-[100svh] w-full overflow-hidden"
     >
@@ -39,7 +40,7 @@ export const Hero: React.FC = () => {
       </motion.div>
 
       {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-obsidian/30 via-transparent to-obsidian" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-obsidian" />
 
       {/* Content */}
       <motion.div

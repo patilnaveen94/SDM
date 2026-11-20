@@ -101,13 +101,20 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({ request, quotati
         </div>
         {saveMessage && <p role="status" className="mb-3 text-right text-xs text-green-300">{saveMessage}</p>}
 
-        <section className="quotation-print overflow-hidden rounded-xl bg-white text-gray-900 shadow-2xl">
+        <section className="quotation-print relative overflow-hidden rounded-xl bg-white text-gray-900 shadow-2xl">
+          <div className="document-brand-watermark" aria-hidden="true">
+            <span className="brand-logo-crop rounded-2xl">
+              <img src="/sdm-productions-logo.png" alt="" className="h-full w-full object-cover" />
+            </span>
+          </div>
           <div className="h-2 bg-gradient-to-r from-blue-950 via-blue-700 to-amber-400" />
-          <div className="p-4 sm:p-10">
+          <div className="document-content p-4 sm:p-10">
             <header className="flex flex-col justify-between gap-5 border-b border-gray-200 pb-6 sm:flex-row">
               <div>
                 <div className="mb-3 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-950 text-lg font-black text-white">SDM</div>
+                  <span className="brand-logo-crop h-12 w-14 rounded-xl border border-blue-950/10 shadow-sm">
+                    <img src="/sdm-productions-logo.png" alt="SDM Productions logo" className="h-full w-full object-cover" />
+                  </span>
                   <div>
                     <p className="text-xl font-bold text-gray-950">{businessInfo.name}</p>
                     <p className="text-xs text-blue-800">{businessInfo.tagline}</p>

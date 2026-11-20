@@ -99,6 +99,10 @@ export const AboutScreen: React.FC = () => {
     Linking.openURL(`mailto:${businessInfo.email}`);
   };
 
+  const handleWhatsApp = () => {
+    Linking.openURL(`https://wa.me/91${businessInfo.whatsapp}`);
+  };
+
   return (
     <View style={styles.container}>
       {/* Animated Header with Scroll-Zoom */}
@@ -138,7 +142,7 @@ export const AboutScreen: React.FC = () => {
 
         {/* Credentials */}
         <View style={styles.credentialsSection}>
-          <Text style={styles.credentialsTitle}>Credentials & Achievements</Text>
+          <Text style={styles.credentialsTitle}>Core Expertise</Text>
           {businessInfo.founder.credentials.map((credential, index) => (
             <View key={index} style={styles.credentialItem}>
               <View style={styles.credentialIcon}>
@@ -149,13 +153,57 @@ export const AboutScreen: React.FC = () => {
           ))}
         </View>
 
+        <View style={styles.credentialsSection}>
+          <Text style={styles.credentialsTitle}>Selected Filmography</Text>
+          {businessInfo.founder.filmography.map((film) => (
+            <View key={film.title} style={styles.detailCard}>
+              <Text style={styles.detailHeading}>{film.title}</Text>
+              <Text style={styles.detailText}>{film.role}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.credentialsSection}>
+          <Text style={styles.credentialsTitle}>Premium Clientele & Vendor Portfolio</Text>
+          {businessInfo.founder.clientele.map((group) => (
+            <View key={group.category} style={styles.detailCard}>
+              <Text style={styles.detailHeading}>{group.category}</Text>
+              <Text style={styles.detailText}>{group.organizations.join(' · ')}</Text>
+              <Text style={styles.detailMeta}>{group.relationship}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.credentialsSection}>
+          <Text style={styles.credentialsTitle}>Work History</Text>
+          {businessInfo.founder.workHistory.map((position) => (
+            <View key={`${position.role}-${position.organization}`} style={styles.detailCard}>
+              <Text style={styles.detailHeading}>{position.role}</Text>
+              <Text style={styles.detailMeta}>{position.organization}{position.period ? ` · ${position.period}` : ''}</Text>
+              <Text style={styles.detailText}>{position.description}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.credentialsSection}>
+          <Text style={styles.credentialsTitle}>Services & Bookings</Text>
+          {businessInfo.founder.services.map((service) => (
+            <View key={service.category} style={styles.detailCard}>
+              <Text style={styles.detailHeading}>{service.category}</Text>
+              <Text style={styles.detailText}>{service.offerings.join(' · ')}</Text>
+            </View>
+          ))}
+        </View>
+
         {/* Contact Section */}
         <View style={styles.contactSection}>
           <Text style={styles.contactTitle}>Get in Touch</Text>
+          <Text style={styles.contactAddress}>{businessInfo.address}</Text>
           <View style={styles.contactButtons}>
             <GoldButton title="Call Now" onPress={handleCall} size="md" />
             <GoldButton title="Email" onPress={handleEmail} variant="outline" size="md" />
           </View>
+          <GoldButton title={`WhatsApp +91 ${businessInfo.whatsapp}`} onPress={handleWhatsApp} variant="outline" size="md" />
 
           {/* Social Links */}
           <View style={styles.socialRow}>
@@ -292,6 +340,31 @@ const styles = StyleSheet.create({
     color: '#C0C0C0',
     lineHeight: 19,
   },
+  detailCard: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  detailHeading: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#F5F5F5',
+  },
+  detailText: {
+    fontSize: 13,
+    color: '#C0C0C0',
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  detailMeta: {
+    fontSize: 12,
+    color: '#D4AF37',
+    lineHeight: 18,
+    marginTop: 5,
+  },
   contactSection: {
     paddingHorizontal: 24,
     marginTop: 32,
@@ -301,6 +374,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#D4AF37',
+    marginBottom: 16,
+  },
+  contactAddress: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: '#C0C0C0',
+    textAlign: 'center',
     marginBottom: 16,
   },
   contactButtons: {

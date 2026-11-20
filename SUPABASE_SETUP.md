@@ -1,0 +1,60 @@
+# Supabase setup and production deployment
+
+The web application uses Supabase Postgres for shared business data and Supabase Auth for administrator access. The browser only receives the project URL and publishable/anon key; the service-role key must never be added to this repository or frontend environment.
+
+## 1. Create and secure the Supabase project
+
+1. Create a Supabase project in the region closest to Bengaluru and save the database password in a password manager.
+2. In **Project Settings → API**, copy the Project URL and the publishable key (or legacy anon key).
+3. In **SQL Editor**, run [`supabase/migrations/20261120190000_initial.sql`](./supabase/migrations/20261120190000_initial.sql) once.
+4. In **Authentication → Users**, invite/create the first administrator using an individual email account. Do not use a shared password.
+5. Copy that user's UUID and grant the allowlist entry in SQL Editor:
+
+   ```sql
+   insert into public.sdm_admin_users (user_id)
+   values ('AUTH_USER_UUID');
+   ```
+
+6. Disable public sign-ups in **Authentication → Settings**. Administrators must be created/invited by the project owner and added to `sdm_admin_users`. Use individual accounts with strong passwords and set the production Site URL and redirect allowlist to the deployed website URL. This app does not yet implement an MFA step-up screen; do not enforce an MFA policy until that flow has been added and tested.
+
+The RLS policies keep orders, customer profiles, quotations, and unpublished content private to allowlisted administrators. Anonymous website visitors can read only public catalog/content through a filtered database function and can submit validated enquiries; they cannot read the enquiry queue. A phone-based cooldown and an overall request cap are included. Add a CAPTCHA/Turnstile verification flow before promoting the public enquiry form heavily.
+
+## 2. Configure and run the web app
+
+Create `web/.env.local` from [`web/.env.example`](./web/.env.example):
+
+```dotenv
+VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY
+```
+
+These are public client values and are protected by database RLS; they are not substitutes for policies. Never set `SUPABASE_SERVICE_ROLE_KEY` or a database password in a `VITE_` variable. Restart the Vite server after changing environment variables.
+
+For the Expo app, create `mobile/.env` from [`mobile/.env.example`](./mobile/.env.example) with the same project URL and publishable/anon key. For EAS builds, set those two `EXPO_PUBLIC_` variables in the EAS environment used for the build. They enable the mobile gear screen to read the same public inventory; the mobile cart does not create orders or enquiries.
+
+From `web/`, validate and run:
+
+```powershell
+npm install
+npx tsc --noEmit
+npm run build
+npm run dev
+```
+
+Without both Supabase variables, the public pages still render from their local/default content, but admin sign-in and public enquiry submission are intentionally unavailable. The app does not fall back to the former hard-coded admin credentials.
+
+## 3. Deploy the site
+
+For Vercel, import the repository, set **Root Directory** to `web`, and add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to Production (and Preview/Development if needed). The existing `web/vercel.json` supplies the SPA route rewrite. Redeploy after setting environment variables. Add the final deployed hostname to Supabase Auth's Site URL and redirect allowlist, then test sign-in, a quote request, gear, an order, a return, payment settlement, quotations, reports, and a second-device login.
+
+The SQL migration is not automatically run by Vercel; apply migrations through Supabase before the first production deploy. No production credentials were supplied in this task, so the project/database and live deployment still need to be created/configured by the account owner.
+
+## Data behavior and operational notes
+
+- The current synchronous store API is retained. Each collection is persisted as a JSONB snapshot in `sdm_app_state`; order creation and item-return/inventory changes use an atomic, revision-checked database batch. A concurrent edit that has a stale revision is rejected and shown in an on-screen error rather than silently overwriting the newer database state; refresh before retrying.
+- Admin pages load the latest shared data at sign-in/page startup; refresh a second open device after another administrator makes changes.
+- Public quote forms write directly to `sdm_quote_requests` through a validated RPC. Administrators review and update requests through the admin panel.
+- The legacy browser data is not automatically uploaded. If an empty Supabase database and old local records are found, the admin panel offers a one-time import from that browser. Review the data and import from the browser that contains the authoritative live records. Demo-mode data remains browser-only and is never synchronized.
+- Invoice/quotation generation and payment status are supported, but this integration does not process payments, send email/SMS, or issue electronic tax invoices. Confirm GST/business invoice requirements with your accountant before using generated invoices as tax invoices.
+- Aadhaar/PAN and customer contact information are business-sensitive. Limit administrator accounts, use MFA, avoid shared devices, and establish an appropriate retention/privacy policy. Do not collect identity numbers unless operationally necessary.
+- Supabase Free is suitable for a pilot and low-volume deployment, not a contractual uptime/backup guarantee. Review current plan quotas and project pausing/backup terms before launch, export critical business records regularly, and move to a paid plan if continuous operation or recoverable backups are required.

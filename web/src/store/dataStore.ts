@@ -4,6 +4,14 @@
  */
 
 import { createDemoDataset } from './demoData';
+import {
+  isAdminSessionActive,
+  persistBusinessCollection,
+  persistBusinessCollectionsBatch,
+  signInAdmin,
+  signOutAdmin,
+  submitQuoteRequest as submitQuoteRequestToBackend,
+} from './backend';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -168,6 +176,8 @@ const KEYS = {
 const DEMO_MODE_KEY = 'sdm_admin_data_mode';
 const DEMO_SEED_KEY = 'sdm_demo_data_seed_version';
 const DEMO_SEED_VERSION = '1';
+let businessStateBatchDepth = 0;
+const pendingBusinessStateWrites = new Map<string, unknown>();
 
 export function isDemoModeEnabled(): boolean {
   return localStorage.getItem(DEMO_MODE_KEY) === 'demo';
@@ -195,6 +205,25 @@ function getItem<T>(key: string, fallback: T[]): T[] {
 
 function setItem<T>(key: string, data: T[]): void {
   localStorage.setItem(getScopedStorageKey(key), JSON.stringify(data));
+  if (businessStateBatchDepth > 0 && key !== KEYS.QUOTE_REQUESTS) {
+    pendingBusinessStateWrites.set(key, data);
+  } else {
+    persistBusinessCollection(key, data);
+  }
+}
+
+function withBusinessStateBatch<T>(operation: () => T): T {
+  businessStateBatchDepth += 1;
+  try {
+    return operation();
+  } finally {
+    businessStateBatchDepth -= 1;
+    if (businessStateBatchDepth === 0 && pendingBusinessStateWrites.size > 0) {
+      const entries = Array.from(pendingBusinessStateWrites, ([key, data]) => ({ key, data }));
+      pendingBusinessStateWrites.clear();
+      persistBusinessCollectionsBatch(entries);
+    }
+  }
 }
 
 function seedDemoData(): void {
@@ -266,18 +295,24 @@ export function getGearInventoryBreakdown(): GearInventoryBreakdown[] {
     let out = 0;
     let blocked = 0;
     let missing = 0;
+    let closedMissing = 0;
 
     rentals.forEach(order => {
       if (order.status === 'returned_pending_payment' || order.status === 'settled') {
-        missing += order.missingItems
+        const closedOrderMissing = order.missingItems
           ?.filter(item => item.gearId === gear.id)
           .reduce((sum, item) => sum + item.quantity, 0) || 0;
+        missing += closedOrderMissing;
+        closedMissing += closedOrderMissing;
         return;
       }
       if (order.status !== 'active' && order.status !== 'partially_returned') return;
       const quantity = order.items
         .filter(item => item.gearId === gear.id)
         .reduce((sum, item) => sum + item.quantity - (order.returnedItems?.[item.gearId] || 0), 0);
+      missing += order.missingItems
+        ?.filter(item => item.gearId === gear.id)
+        .reduce((sum, item) => sum + item.quantity, 0) || 0;
       if (isFutureOrderStart(order)) {
         blocked += quantity;
       } else {
@@ -287,7 +322,7 @@ export function getGearInventoryBreakdown(): GearInventoryBreakdown[] {
 
     return {
       gear,
-      available: Math.max(0, gear.totalStock - out - blocked - missing),
+      available: Math.max(0, gear.totalStock - out - blocked - closedMissing),
       out,
       blocked,
       missing,
@@ -360,12 +395,30 @@ export function getQuoteRequests(): QuoteRequest[] {
   return getItem<QuoteRequest>(KEYS.QUOTE_REQUESTS, []);
 }
 
-export function addQuoteRequest(request: Omit<QuoteRequest, 'id' | 'createdAt' | 'convertedOrderId' | 'status' | 'approvedAt'>): QuoteRequest {
+function saveQuoteRequest(request: Omit<QuoteRequest, 'id' | 'createdAt' | 'convertedOrderId' | 'status' | 'approvedAt'>): QuoteRequest {
   const newRequest: QuoteRequest = { ...request, status: 'pending', id: generateId(), createdAt: new Date().toISOString() };
   const all = getQuoteRequests();
   all.push(newRequest);
   setItem(KEYS.QUOTE_REQUESTS, all);
   return newRequest;
+}
+
+export function addQuoteRequest(request: Omit<QuoteRequest, 'id' | 'createdAt' | 'convertedOrderId' | 'status' | 'approvedAt'>): QuoteRequest {
+  return saveQuoteRequest(request);
+}
+
+export async function submitPublicQuoteRequest(request: Omit<QuoteRequest, 'id' | 'createdAt' | 'convertedOrderId' | 'status' | 'approvedAt'>): Promise<QuoteRequest> {
+  const pendingRequest: QuoteRequest = {
+    ...request,
+    status: 'pending',
+    id: generateId(),
+    createdAt: new Date().toISOString(),
+  };
+  const savedRequest = await submitQuoteRequestToBackend(pendingRequest);
+  const all = getQuoteRequests();
+  all.push(savedRequest);
+  setItem(KEYS.QUOTE_REQUESTS, all);
+  return savedRequest;
 }
 
 export function markQuoteRequestApproved(id: string): QuoteRequest | null {
@@ -433,107 +486,120 @@ export function getOutstandingOrderItems(order: Order): OrderItem[] {
 
 /** Create order — status starts as 'active', gear counts auto-update */
 export function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'status' | 'paymentStatus' | 'totalAmount' | 'days'>): Order {
-  const days = order.rentalHoursPerPeriod && order.startTime && order.endTime
-    ? Math.max(1, Math.ceil(((new Date(`${order.endDate}T${order.endTime}`).getTime() - new Date(`${order.startDate}T${order.startTime}`).getTime()) / 3600000) / order.rentalHoursPerPeriod))
-    : calculateDays(order.startDate, order.endDate);
-  const subtotal = calculateOrderTotal(order.items, days);
-  const discountAmount = Math.min(Math.max(0, order.discountAmount || 0), subtotal);
-  const totalAmount = subtotal - discountAmount;
-  const newOrder: Order = {
-    ...order,
-    id: generateId(),
-    createdAt: new Date().toISOString(),
-    status: 'active',
-    paymentStatus: 'pending',
-    discountAmount,
-    totalAmount,
-    days,
-  };
-  const all = getOrders();
-  all.push(newOrder);
-  setItem(KEYS.ORDERS, all);
-  // Auto-update gear stock
-  if (order.type === 'rental') {
-    rentOutItems(order.items);
-  }
-  return newOrder;
+  return withBusinessStateBatch(() => {
+    const days = order.rentalHoursPerPeriod && order.startTime && order.endTime
+      ? Math.max(1, Math.ceil(((new Date(`${order.endDate}T${order.endTime}`).getTime() - new Date(`${order.startDate}T${order.startTime}`).getTime()) / 3600000) / order.rentalHoursPerPeriod))
+      : calculateDays(order.startDate, order.endDate);
+    const subtotal = calculateOrderTotal(order.items, days);
+    const discountAmount = Math.min(Math.max(0, order.discountAmount || 0), subtotal);
+    const totalAmount = subtotal - discountAmount;
+    const newOrder: Order = {
+      ...order,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      status: 'active',
+      paymentStatus: 'pending',
+      discountAmount,
+      totalAmount,
+      days,
+    };
+    const all = getOrders();
+    all.push(newOrder);
+    setItem(KEYS.ORDERS, all);
+    if (order.type === 'rental') {
+      rentOutItems(order.items);
+    }
+    return newOrder;
+  });
 }
 
 /** Mark items as received back — moves to returned_pending_payment */
 export function markItemsReturned(orderId: string): Order | null {
-  const all = getOrders();
-  const idx = all.findIndex(o => o.id === orderId);
-  if (idx === -1 || (all[idx].status !== 'active' && all[idx].status !== 'partially_returned')) return null;
-  const outstandingItems = getOutstandingOrderItems(all[idx]);
-  if (outstandingItems.length === 0) return null;
-  all[idx].status = 'returned_pending_payment';
-  all[idx].returnedAt = new Date().toISOString();
-  setItem(KEYS.ORDERS, all);
-  // Return items to inventory
-  if (all[idx].type === 'rental') {
-    returnItems(outstandingItems);
-  }
-  return all[idx];
+  return withBusinessStateBatch(() => {
+    const all = getOrders();
+    const idx = all.findIndex(o => o.id === orderId);
+    if (idx === -1 || (all[idx].status !== 'active' && all[idx].status !== 'partially_returned')) return null;
+    const outstandingItems = getOutstandingOrderItems(all[idx]);
+    if (outstandingItems.length === 0) return null;
+    all[idx].status = 'returned_pending_payment';
+    all[idx].returnedAt = new Date().toISOString();
+    setItem(KEYS.ORDERS, all);
+    if (all[idx].type === 'rental') {
+      returnItems(outstandingItems);
+    }
+    return all[idx];
+  });
 }
 
 export function markItemsPartiallyReturned(
   orderId: string,
   returnedItems: Array<{ gearId: string; quantity: number }>,
   note: string,
-  closeWithMissingItems = false,
+  recordMissingItems = false,
 ): Order | null {
-  const all = getOrders();
-  const index = all.findIndex(order => order.id === orderId);
-  if (index === -1) return null;
-  const order = all[index];
-  if (order.status !== 'active' && order.status !== 'partially_returned') return null;
+  return withBusinessStateBatch(() => {
+    const all = getOrders();
+    const index = all.findIndex(order => order.id === orderId);
+    if (index === -1) return null;
+    const order = all[index];
+    if (order.status !== 'active' && order.status !== 'partially_returned') return null;
 
-  const existingReturned = order.returnedItems || {};
-  const validItems = returnedItems.filter(item => {
-    const orderedQuantity = order.items.find(orderItem => orderItem.gearId === item.gearId)?.quantity || 0;
-    const remaining = orderedQuantity - (existingReturned[item.gearId] || 0);
-    return Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= remaining;
-  });
-  const hasPreviouslyReturnedItems = Object.values(existingReturned).some(quantity => quantity > 0);
-  if (
-    validItems.length !== returnedItems.length
-    || (!validItems.length && !(closeWithMissingItems && hasPreviouslyReturnedItems))
-    || !note.trim()
-  ) return null;
+    const existingReturned = order.returnedItems || {};
+    const validItems = returnedItems.filter(item => {
+      const orderedQuantity = order.items.find(orderItem => orderItem.gearId === item.gearId)?.quantity || 0;
+      const remaining = orderedQuantity - (existingReturned[item.gearId] || 0);
+      return Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= remaining;
+    });
+    if (
+      validItems.length !== returnedItems.length
+      || (!validItems.length && !recordMissingItems)
+      || !note.trim()
+    ) return null;
 
-  const updatedReturned = { ...existingReturned };
-  const gearItems: OrderItem[] = validItems.map(item => {
-    updatedReturned[item.gearId] = (updatedReturned[item.gearId] || 0) + item.quantity;
-    const orderItem = order.items.find(candidate => candidate.gearId === item.gearId)!;
-    return { ...orderItem, quantity: item.quantity };
-  });
-  const outstanding = order.items.some(item => (updatedReturned[item.gearId] || 0) < item.quantity);
-  const missingItems = order.items.flatMap(item => {
-    const quantity = item.quantity - (updatedReturned[item.gearId] || 0);
-    return quantity > 0 ? [{ ...item, quantity }] : [];
-  });
+    const updatedReturned = { ...existingReturned };
+    const gearItems: OrderItem[] = validItems.map(item => {
+      updatedReturned[item.gearId] = (updatedReturned[item.gearId] || 0) + item.quantity;
+      const orderItem = order.items.find(candidate => candidate.gearId === item.gearId)!;
+      return { ...orderItem, quantity: item.quantity };
+    });
+    const outstanding = order.items.some(item => (updatedReturned[item.gearId] || 0) < item.quantity);
+    const outstandingItems = order.items.flatMap(item => {
+      const quantity = item.quantity - (updatedReturned[item.gearId] || 0);
+      return quantity > 0 ? [{ ...item, quantity }] : [];
+    });
 
-  order.returnedItems = updatedReturned;
-  if (gearItems.length > 0) {
-    order.partialReturns = [...(order.partialReturns || []), {
-      returnedAt: new Date().toISOString(),
-      items: gearItems,
-      note: note.trim(),
-    }];
-  }
-  order.notes = [order.notes, `Return update: ${note.trim()}`].filter(Boolean).join('\n');
-  order.status = outstanding && !closeWithMissingItems ? 'partially_returned' : 'returned_pending_payment';
-  if (closeWithMissingItems && outstanding) {
-    order.missingItems = missingItems;
-    order.missingNote = note.trim();
-  } else if (!outstanding) {
-    order.missingItems = [];
-    order.missingNote = undefined;
-  }
-  if (!outstanding || closeWithMissingItems) order.returnedAt = new Date().toISOString();
-  setItem(KEYS.ORDERS, all);
-  if (order.type === 'rental') returnItems(gearItems);
-  return order;
+    order.returnedItems = updatedReturned;
+    if (gearItems.length > 0) {
+      order.partialReturns = [...(order.partialReturns || []), {
+        returnedAt: new Date().toISOString(),
+        items: gearItems,
+        note: note.trim(),
+      }];
+    }
+    order.notes = [order.notes, `Return update: ${note.trim()}`].filter(Boolean).join('\n');
+    order.status = outstanding ? 'partially_returned' : 'returned_pending_payment';
+    if (recordMissingItems && outstanding) {
+      order.missingItems = outstandingItems;
+      order.missingNote = note.trim();
+    } else if (outstanding && order.missingItems?.length) {
+      const newlyReturned = new Map(gearItems.map(item => [item.gearId, item.quantity]));
+      order.missingItems = order.missingItems.flatMap(item => {
+        const quantity = Math.min(
+          outstandingItems.find(outstandingItem => outstandingItem.gearId === item.gearId)?.quantity || 0,
+          Math.max(0, item.quantity - (newlyReturned.get(item.gearId) || 0)),
+        );
+        return quantity > 0 ? [{ ...item, quantity }] : [];
+      });
+      if (order.missingItems.length === 0) order.missingNote = undefined;
+    } else if (!outstanding) {
+      order.missingItems = [];
+      order.missingNote = undefined;
+    }
+    order.returnedAt = outstanding ? undefined : new Date().toISOString();
+    setItem(KEYS.ORDERS, all);
+    if (order.type === 'rental') returnItems(gearItems);
+    return order;
+  });
 }
 
 /** Mark order as fully settled (payment received) */
@@ -658,21 +724,14 @@ export function deletePartner(id: string): boolean {
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
-const ADMIN_USER = 'SDMTest';
-const ADMIN_PASS = 'SDM@1234';
-
-export function adminLogin(username: string, password: string): boolean {
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    sessionStorage.setItem('sdm_admin_auth', 'true');
-    return true;
-  }
-  return false;
+export async function adminLogin(email: string, password: string): Promise<{ success: boolean; message?: string }> {
+  return signInAdmin(email, password);
 }
 
 export function isAdminLoggedIn(): boolean {
-  return sessionStorage.getItem('sdm_admin_auth') === 'true';
+  return isAdminSessionActive();
 }
 
-export function adminLogout(): void {
-  sessionStorage.removeItem('sdm_admin_auth');
+export async function adminLogout(): Promise<void> {
+  await signOutAdmin();
 }

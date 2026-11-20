@@ -4,14 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        obsidian: '#0A0A0A',
-        'dark-surface': '#111111',
-        'card-surface': '#1A1A1A',
-        'border-subtle': '#2A2A2A',
-        gold: '#D4AF37',
-        'gold-light': '#E8C547',
-        'gold-dark': '#B8962E',
-        silver: '#C0C0C0',
+        obsidian: 'rgb(var(--sdm-obsidian) / <alpha-value>)',
+        'dark-surface': 'rgb(var(--sdm-dark-surface) / <alpha-value>)',
+        'card-surface': 'rgb(var(--sdm-card-surface) / <alpha-value>)',
+        'border-subtle': 'rgb(var(--sdm-border-subtle) / <alpha-value>)',
+        gold: 'rgb(var(--sdm-gold) / <alpha-value>)',
+        'gold-light': 'rgb(var(--sdm-gold-light) / <alpha-value>)',
+        'gold-dark': 'rgb(var(--sdm-gold-dark) / <alpha-value>)',
+        silver: 'rgb(var(--sdm-silver) / <alpha-value>)',
       },
       fontFamily: {
         heading: ['"Playfair Display"', 'serif'],
