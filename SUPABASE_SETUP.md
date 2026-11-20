@@ -21,7 +21,9 @@ The RLS policies keep orders, customer profiles, quotations, and unpublished con
 
 ## 2. Configure and run the web app
 
-Create `web/.env.local` from [`web/.env.example`](./web/.env.example):
+The SDM Supabase project URL and publishable key are included as public-client defaults in the web app, so a Vercel environment-variable misconfiguration does not disable login or enquiries. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to override those defaults for another deployment. The publishable key is designed for browser use and protected by RLS; it is not a service-role key.
+
+To override the defaults locally, create `web/.env.local` from [`web/.env.example`](./web/.env.example):
 
 ```dotenv
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
