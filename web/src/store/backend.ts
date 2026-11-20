@@ -156,6 +156,33 @@ export async function signInAdmin(email: string, password: string): Promise<{ su
   return { success: true };
 }
 
+export async function hasAdminPasswordSetupSession(): Promise<boolean> {
+  if (!isSupabaseConfigured) return false;
+
+  const client = getSupabaseClient();
+  const { data: sessionData, error: sessionError } = await client.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!sessionData.session) return false;
+
+  const { data: isAdmin, error: adminError } = await client.rpc('sdm_is_admin');
+  if (adminError) throw adminError;
+  return Boolean(isAdmin);
+}
+
+export async function setAdminPassword(password: string): Promise<void> {
+  const client = getSupabaseClient();
+  const { data: sessionData, error: sessionError } = await client.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!sessionData.session) throw new Error('The invitation link has expired. Request a new administrator invitation.');
+
+  const { data: isAdmin, error: adminError } = await client.rpc('sdm_is_admin');
+  if (adminError) throw adminError;
+  if (!isAdmin) throw new Error('This account has not been granted SDM administrator access.');
+
+  const { error: passwordError } = await client.auth.updateUser({ password });
+  if (passwordError) throw passwordError;
+}
+
 export async function signOutAdmin(): Promise<void> {
   if (isSupabaseConfigured) {
     const { error } = await getSupabaseClient().auth.signOut();
