@@ -3,7 +3,6 @@
  * Manages: Gear inventory, Orders (rentals + event bookings), Updates/Feed, Customer profiles.
  */
 
-import { createDemoDataset } from './demoData';
 import {
   isAdminSessionActive,
   persistBusinessCollection,
@@ -173,30 +172,14 @@ const KEYS = {
   QUOTATIONS: 'sdm_quotations',
   PARTNERS: 'sdm_partners',
 };
-const DEMO_MODE_KEY = 'sdm_admin_data_mode';
-const DEMO_SEED_KEY = 'sdm_demo_data_seed_version';
-const DEMO_SEED_VERSION = '1';
 let businessStateBatchDepth = 0;
 const pendingBusinessStateWrites = new Map<string, unknown>();
-
-export function isDemoModeEnabled(): boolean {
-  return localStorage.getItem(DEMO_MODE_KEY) === 'demo';
-}
-
-export function getScopedStorageKey(key: string): string {
-  return isDemoModeEnabled() ? `sdm_demo_${key.replace(/^sdm_/, '')}` : key;
-}
-
-export function enableDemoMode(enabled: boolean): void {
-  if (enabled) seedDemoData();
-  localStorage.setItem(DEMO_MODE_KEY, enabled ? 'demo' : 'live');
-}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getItem<T>(key: string, fallback: T[]): T[] {
   try {
-    const data = localStorage.getItem(getScopedStorageKey(key));
+    const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : fallback;
   } catch {
     return fallback;
@@ -204,7 +187,7 @@ function getItem<T>(key: string, fallback: T[]): T[] {
 }
 
 function setItem<T>(key: string, data: T[]): void {
-  localStorage.setItem(getScopedStorageKey(key), JSON.stringify(data));
+  localStorage.setItem(key, JSON.stringify(data));
   if (businessStateBatchDepth > 0 && key !== KEYS.QUOTE_REQUESTS) {
     pendingBusinessStateWrites.set(key, data);
   } else {
@@ -224,24 +207,6 @@ function withBusinessStateBatch<T>(operation: () => T): T {
       persistBusinessCollectionsBatch(entries);
     }
   }
-}
-
-function seedDemoData(): void {
-  if (localStorage.getItem(DEMO_SEED_KEY) === DEMO_SEED_VERSION) return;
-  const demo = createDemoDataset();
-  const records: Array<[string, unknown]> = [
-    [KEYS.GEAR, demo.gear],
-    [KEYS.ORDERS, demo.orders],
-    [KEYS.CUSTOMERS, demo.customers],
-    [KEYS.QUOTE_REQUESTS, demo.quoteRequests],
-    [KEYS.QUOTATIONS, demo.quotations],
-    [KEYS.UPDATES, demo.updates],
-    [KEYS.PARTNERS, demo.partners],
-  ];
-  records.forEach(([key, value]) => {
-    localStorage.setItem(`sdm_demo_${key.replace(/^sdm_/, '')}`, JSON.stringify(value));
-  });
-  localStorage.setItem(DEMO_SEED_KEY, DEMO_SEED_VERSION);
 }
 
 function generateId(): string {

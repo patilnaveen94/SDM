@@ -203,7 +203,7 @@ export async function submitQuoteRequest<T extends object>(request: T): Promise<
 }
 
 export function persistBusinessCollection(key: string, data: unknown): void {
-  if (!isSupabaseConfigured || !isAdminSessionActive() || localStorage.getItem('sdm_admin_data_mode') === 'demo') return;
+  if (!isSupabaseConfigured || !isAdminSessionActive()) return;
 
   const client = getSupabaseClient();
   const queueKey = key === QUOTE_REQUESTS_KEY ? 'quote-requests' : 'business-state';
@@ -229,7 +229,7 @@ export function persistBusinessCollection(key: string, data: unknown): void {
 }
 
 export function persistBusinessCollectionsBatch(entries: Array<{ key: string; data: unknown }>): void {
-  if (!isSupabaseConfigured || !isAdminSessionActive() || localStorage.getItem('sdm_admin_data_mode') === 'demo') return;
+  if (!isSupabaseConfigured || !isAdminSessionActive()) return;
   const stateEntries = entries.filter(entry => entry.key !== QUOTE_REQUESTS_KEY);
   if (stateEntries.length === 0) return;
 

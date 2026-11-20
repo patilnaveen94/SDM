@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { enableDemoMode, isAdminLoggedIn, isDemoModeEnabled, adminLogout } from '../store/dataStore';
+import { isAdminLoggedIn, adminLogout } from '../store/dataStore';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { hasLegacyStateBackup, importLegacyStateBackup } from '../store/backend';
 
@@ -21,8 +21,6 @@ export const AdminLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [legacyBackupAvailable, setLegacyBackupAvailable] = useState(hasLegacyStateBackup());
   const [actionError, setActionError] = useState('');
-  const demoMode = isDemoModeEnabled();
-
   if (!isAdminLoggedIn()) {
     return <Navigate to="/admin" replace />;
   }
@@ -45,32 +43,13 @@ export const AdminLayout: React.FC = () => {
       setActionError(error instanceof Error ? error.message : 'Unable to import the browser backup.');
     }
   };
-  const handleDemoModeToggle = () => {
-    enableDemoMode(!demoMode);
-    window.location.reload();
-  };
-
   const SidebarContent = () => (
     <>
       <div className="p-5 border-b border-white/5">
         <h1 className="text-lg font-heading font-bold text-gold">SDM Admin</h1>
         <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Management Panel</p>
       </div>
-      <div className={`mx-3 mt-3 rounded-xl border p-3 ${demoMode ? 'border-blue-400/20 bg-blue-500/5' : 'border-white/5 bg-white/[0.02]'}`}>
-        <p className={`text-xs font-semibold ${demoMode ? 'text-blue-300' : 'text-gray-300'}`}>
-          {demoMode ? 'Demo data is active' : 'Live browser data'}
-        </p>
-        <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
-          {demoMode ? 'Changes stay separate from your business records.' : 'Demo data is stored separately and will not replace live records.'}
-        </p>
-        <button
-          onClick={handleDemoModeToggle}
-          className="mt-2 w-full rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-gray-200 hover:bg-white/5"
-        >
-          {demoMode ? 'Switch to live data' : 'Switch to demo data'}
-        </button>
-      </div>
-      {legacyBackupAvailable && !demoMode && (
+      {legacyBackupAvailable && (
         <div className="mx-3 mt-3 rounded-xl border border-amber-400/20 bg-amber-500/5 p-3">
           <p className="text-xs font-semibold text-amber-200">Browser data backup found</p>
           <p className="mt-1 text-[10px] leading-relaxed text-gray-400">The Supabase database is empty. Import the old records from this device before continuing.</p>
@@ -122,7 +101,7 @@ export const AdminLayout: React.FC = () => {
           </div>
         </button>
         <span className="text-sm font-heading font-bold text-gold">
-          SDM Admin{demoMode && <span className="ml-1 text-[9px] text-blue-300">DEMO</span>}
+          SDM Admin
         </span>
         <ThemeToggle compact />
         <button onClick={handleLogout} className="text-xs text-gray-400">Logout</button>

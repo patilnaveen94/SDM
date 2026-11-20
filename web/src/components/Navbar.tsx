@@ -81,10 +81,6 @@ export const Navbar: React.FC = () => {
               <ThemeToggle />
             </div>
 
-            <a href="#booking" onClick={(e) => handleNavClick(e, '#booking')} className="ml-auto hidden min-h-11 items-center justify-center rounded-full bg-gold px-5 text-xs font-bold uppercase tracking-wider text-obsidian transition-colors hover:bg-gold-light md:inline-flex lg:ml-0">
-              Get started
-            </a>
-
             {/* Mobile and tablet navigation */}
             <button
               type="button"
@@ -147,9 +143,8 @@ export const Navbar: React.FC = () => {
             </nav>
             <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-8">
               <ThemeToggle />
-              <div className="grid flex-1 grid-cols-2 gap-3">
-              <a href="#booking" onClick={(e) => handleNavClick(e, '#booking')} className="flex min-h-12 items-center justify-center rounded-full bg-gold px-4 text-sm font-bold text-obsidian">Explore services</a>
-              <a href={`tel:${businessInfo.phone}`} className="flex min-h-12 items-center justify-center rounded-full border border-white/15 px-4 text-sm font-semibold text-white">Call us</a>
+              <div className="flex-1">
+                <a href={`tel:${businessInfo.phone}`} className="flex min-h-12 items-center justify-center rounded-full border border-white/15 px-4 text-sm font-semibold text-white">Call us</a>
               </div>
             </div>
           </motion.div>

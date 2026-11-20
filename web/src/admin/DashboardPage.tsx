@@ -46,7 +46,7 @@ export const DashboardPage: React.FC = () => {
   const reload = () => setRefresh(n => n + 1);
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'sdm_quote_requests' || event.key === 'sdm_demo_quote_requests') setRefresh(n => n + 1);
+      if (event.key === 'sdm_quote_requests') setRefresh(n => n + 1);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
