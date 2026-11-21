@@ -28,7 +28,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ contrast = false, comp
       onClick={toggleTheme}
       aria-label={`Switch to ${nextTheme} theme`}
       title={`Switch to ${nextTheme} theme`}
-      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-full border px-3 text-xs font-semibold transition-colors ${
+      className={`theme-toggle inline-flex min-h-10 items-center justify-center gap-2 rounded-full border px-3 text-xs font-semibold transition-colors ${
         contrast
           ? 'border-white/25 bg-black/30 text-white hover:bg-black/50'
           : 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10'

@@ -8,6 +8,7 @@ import {
   getPendingPaymentOrders,
   getPartiallyReturnedOrders,
   getOutstandingOrderItems,
+  getOrderBalance,
   getCustomerProfiles,
   getQuoteRequests,
   getQuotations,
@@ -18,6 +19,7 @@ import {
   SavedQuotation,
 } from '../store/dataStore';
 import { QuotationModal } from './QuotationModal';
+import { AdminCalendar } from './AdminCalendar';
 
 interface DetailRow {
   title: string;
@@ -85,7 +87,7 @@ export const DashboardPage: React.FC = () => {
   const rentOutOrders = activeOrders.filter(order => order.type === 'rental' && !isFutureOrderStart(order));
   const deliveryToday = activeOrders.filter(order => order.type === 'rental' && order.startDate === todayString);
   const receiveToday = activeOrders.filter(order => order.type === 'rental' && order.endDate === todayString);
-  const pendingAmount = [...activeOrders, ...pendingPayment].reduce((sum, order) => sum + order.totalAmount, 0);
+  const pendingAmount = [...activeOrders, ...pendingPayment].reduce((sum, order) => sum + getOrderBalance(order), 0);
   const availableUnits = inventory.reduce((sum, item) => sum + item.available, 0);
   const itemsOut = inventory.reduce((sum, item) => sum + item.out, 0);
   const blockedUnits = inventory.reduce((sum, item) => sum + item.blocked, 0);
@@ -253,6 +255,8 @@ export const DashboardPage: React.FC = () => {
         </button>
       </div>
 
+      <AdminCalendar orders={orders} />
+
       <section className="mb-8">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">Today &amp; immediate attention</h2>
         {renderStats(priorityStats)}
@@ -338,7 +342,7 @@ export const DashboardPage: React.FC = () => {
                 <div>
                   <p className="text-white font-medium text-sm">{order.customerName} <span className="text-gray-500">• {order.customerPhone}</span></p>
                   <p className="text-gray-400 text-xs mt-1">{order.items.map(item => `${item.gearName} ×${item.quantity}`).join(', ')}</p>
-                  <p className="text-yellow-400 text-xs mt-1">Amount: ₹{order.totalAmount.toLocaleString('en-IN')} ({order.days} days)</p>
+                  <p className="text-yellow-400 text-xs mt-1">Balance due: ₹{getOrderBalance(order).toLocaleString('en-IN')} ({order.days} days)</p>
                 </div>
                 <button onClick={() => handleSettle(order.id)} className="px-4 py-2 rounded-lg bg-gold/10 text-gold text-xs font-bold hover:bg-gold/20 transition-colors">💰 Payment Received</button>
               </div>

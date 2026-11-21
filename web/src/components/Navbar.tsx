@@ -52,8 +52,8 @@ export const Navbar: React.FC = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-3 md:h-20">
             <motion.a href="#hero" aria-label={`${businessInfo.name}, home`} onClick={(e) => handleNavClick(e, '#hero')} whileHover={{ scale: 1.02 }} className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-              <span className="brand-logo-crop header-brand-logo h-11 w-14 shrink-0 rounded-lg border border-white/15 bg-black/90 shadow-md sm:h-12 sm:w-16">
-                <img src="/sdm-productions-logo.png" alt="SDM Productions logo" className="h-full w-full object-cover" />
+              <span className="header-brand-logo h-10 w-[72px] shrink-0 overflow-hidden rounded-lg border border-white/15 bg-black shadow-md sm:h-12 sm:w-[86px]">
+                <img src="/sdm-header-logo.png" alt="SDM Productions logo" className="h-full w-full object-contain" />
               </span>
               <span className="block truncate text-sm font-heading font-bold text-white sm:text-base md:text-lg">
                 {businessInfo.name}
@@ -61,7 +61,7 @@ export const Navbar: React.FC = () => {
             </motion.a>
 
             {/* Desktop */}
-            <div className="hidden items-center gap-7 lg:flex xl:gap-9">
+            <div className="hidden items-center gap-4 lg:flex xl:gap-7 2xl:gap-9">
               {webNavItems.map((item) => (
                 <a
                   key={item.href}

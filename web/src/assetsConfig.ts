@@ -436,101 +436,6 @@ export const rentalCatalog: RentalGear[] = [
   },
 ];
 
-// ─── Academy Courses ─────────────────────────────────────────────────────────
-
-export interface AcademyCourse {
-  id: string;
-  title: string;
-  category: CourseCategory;
-  instructor: string;
-  duration: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Masterclass';
-  price: number;
-  currency: string;
-  description: string;
-  syllabus: string[];
-  image: string;
-  enrolledCount: number;
-  rating: number;
-}
-
-export type CourseCategory = 'photography' | 'cinematography' | 'editing';
-
-export const academyCourses: AcademyCourse[] = [
-  {
-    id: 'course-001',
-    title: 'Professional Photography Masterclass',
-    category: 'photography',
-    instructor: 'SDM',
-    duration: '8 Weeks',
-    level: 'Masterclass',
-    price: 25000,
-    currency: 'INR',
-    description: 'An intensive masterclass covering everything from lighting theory to advanced composition, taught at government-accredited standards.',
-    syllabus: [
-      'Camera Fundamentals & Manual Control',
-      'Lighting Theory & Studio Techniques',
-      'Composition & Visual Storytelling',
-      'Portrait & Fashion Photography',
-      'Event & Wedding Coverage Workflow',
-      'Post-Processing & Color Grading',
-      'Business of Photography',
-      'Portfolio Building & Client Management',
-    ],
-    image: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=800&q=80',
-    enrolledCount: 156,
-    rating: 4.9,
-  },
-  {
-    id: 'course-002',
-    title: 'Cinematic Filmmaking Intensive',
-    category: 'cinematography',
-    instructor: 'SDM',
-    duration: '12 Weeks',
-    level: 'Advanced',
-    price: 45000,
-    currency: 'INR',
-    description: 'Learn cinema-grade filmmaking from pre-production to final delivery using industry-standard equipment and workflows.',
-    syllabus: [
-      'Cinema Camera Systems & Codecs',
-      'Anamorphic & Special Lens Techniques',
-      'Camera Movement & Stabilization',
-      'Cinematic Lighting Design',
-      'Audio Recording for Film',
-      'Directing & Shot Planning',
-      'Color Science & DaVinci Resolve',
-      'Drone Cinematography',
-      'Wedding Film Storytelling',
-      'Delivery & Distribution Formats',
-    ],
-    image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&q=80',
-    enrolledCount: 89,
-    rating: 4.8,
-  },
-  {
-    id: 'course-003',
-    title: 'High-End Editing & Color Grading',
-    category: 'editing',
-    instructor: 'SDM',
-    duration: '6 Weeks',
-    level: 'Intermediate',
-    price: 18000,
-    currency: 'INR',
-    description: 'Master DaVinci Resolve and Adobe Premiere Pro for professional-grade editing and Hollywood color grading techniques.',
-    syllabus: [
-      'NLE Fundamentals (Premiere & Resolve)',
-      'Multi-Cam Editing Workflows',
-      'Sound Design & Mixing',
-      'Color Theory & Scopes',
-      'Primary & Secondary Color Grading',
-      'Film Emulation & Look Development',
-    ],
-    image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&q=80',
-    enrolledCount: 213,
-    rating: 4.7,
-  },
-];
-
 // ─── Hero Video/Assets ───────────────────────────────────────────────────────
 
 export const heroAssets = {
@@ -552,6 +457,7 @@ export const webNavItems: NavItem[] = [
   { label: 'About', href: '#about' },
   { label: 'Booking', href: '#booking' },
   { label: 'Academy', href: '#academy' },
+  { label: 'Reviews', href: '#testimonials' },
   { label: 'Partners', href: '#partners' },
   { label: 'Contact', href: '#contact' },
 ];

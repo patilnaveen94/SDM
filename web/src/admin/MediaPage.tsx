@@ -1,26 +1,55 @@
 import React, { useState } from 'react';
 import { getMediaConfig, updateMediaConfig, addPortfolioItem, deletePortfolioItem, MediaConfig } from '../store/mediaStore';
+import { normalizeDriveImageUrl, uploadPublicMediaImage } from '../store/mediaUpload';
 
 export const MediaPage: React.FC = () => {
   const [config, setConfig] = useState(getMediaConfig());
   const [showPortfolioForm, setShowPortfolioForm] = useState(false);
   const [newItem, setNewItem] = useState({ title: '', category: 'wedding', type: 'image' as 'image' | 'video', thumbnail: '', fullUrl: '', description: '' });
   const [saved, setSaved] = useState('');
+  const [error, setError] = useState('');
+  const [uploadingTarget, setUploadingTarget] = useState('');
 
   const refresh = () => setConfig(getMediaConfig());
 
   const handleSaveGeneral = () => {
-    updateMediaConfig({ heroVideoUrl: config.heroVideoUrl, heroFallbackImage: config.heroFallbackImage, founderImage: config.founderImage });
+    updateMediaConfig({
+      heroVideoUrl: config.heroVideoUrl,
+      heroFallbackImage: normalizeDriveImageUrl(config.heroFallbackImage),
+      founderImage: normalizeDriveImageUrl(config.founderImage),
+    });
+    refresh();
     setSaved('General settings saved!');
     setTimeout(() => setSaved(''), 2000);
   };
 
   const handleAddPortfolio = () => {
-    if (!newItem.title || !newItem.thumbnail) return;
-    addPortfolioItem(newItem);
+    if (!newItem.title.trim() || !newItem.thumbnail.trim()) {
+      setError('Add a title and an image before saving this portfolio item.');
+      return;
+    }
+    const thumbnail = normalizeDriveImageUrl(newItem.thumbnail);
+    addPortfolioItem({ ...newItem, title: newItem.title.trim(), thumbnail, fullUrl: normalizeDriveImageUrl(newItem.fullUrl || thumbnail) });
     setNewItem({ title: '', category: 'wedding', type: 'image', thumbnail: '', fullUrl: '', description: '' });
     setShowPortfolioForm(false);
+    setError('');
     refresh();
+  };
+
+  const handleImageUpload = async (file: File | undefined, target: 'hero' | 'founder' | 'portfolio') => {
+    if (!file) return;
+    setUploadingTarget(target);
+    setError('');
+    try {
+      const { url } = await uploadPublicMediaImage(file);
+      if (target === 'hero') setConfig(current => ({ ...current, heroFallbackImage: url }));
+      if (target === 'founder') setConfig(current => ({ ...current, founderImage: url }));
+      if (target === 'portfolio') setNewItem(current => ({ ...current, thumbnail: url, fullUrl: url }));
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'Image upload failed.');
+    } finally {
+      setUploadingTarget('');
+    }
   };
 
   const handleDeletePortfolio = (id: string) => {
@@ -35,6 +64,7 @@ export const MediaPage: React.FC = () => {
       <p className="text-gray-500 text-sm mb-8">Manage all images and videos displayed on the website</p>
 
       {saved && <div className="mb-4 px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">{saved}</div>}
+      {error && <div role="alert" className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</div>}
 
       {/* General Media Settings */}
       <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 sm:p-6 mb-8">
@@ -47,6 +77,10 @@ export const MediaPage: React.FC = () => {
           <div>
             <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Hero Fallback Image</label>
             <input value={config.heroFallbackImage} onChange={e => setConfig({...config, heroFallbackImage: e.target.value})} className={inputCls} placeholder="https://..." />
+            <label className="mt-2 block text-xs text-gray-400">
+              Or upload from this device
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingTarget === 'hero'} onChange={e => { void handleImageUpload(e.target.files?.[0], 'hero'); e.currentTarget.value = ''; }} className="mt-2 block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gold/10 file:px-3 file:py-2 file:font-semibold file:text-gold" />
+            </label>
           </div>
           {config.heroFallbackImage && <img src={config.heroFallbackImage} alt="Preview" className="w-full h-32 object-cover rounded-xl mt-2" />}
         </div>
@@ -55,6 +89,10 @@ export const MediaPage: React.FC = () => {
         <div>
           <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Founder Profile Image</label>
           <input value={config.founderImage} onChange={e => setConfig({...config, founderImage: e.target.value})} className={inputCls} placeholder="https://..." />
+          <label className="mt-2 block text-xs text-gray-400">
+            Or upload from this device
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingTarget === 'founder'} onChange={e => { void handleImageUpload(e.target.files?.[0], 'founder'); e.currentTarget.value = ''; }} className="mt-2 block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gold/10 file:px-3 file:py-2 file:font-semibold file:text-gold" />
+          </label>
         </div>
         {config.founderImage && <img src={config.founderImage} alt="Preview" className="w-24 h-24 object-cover rounded-xl mt-2" />}
 
@@ -84,10 +122,17 @@ export const MediaPage: React.FC = () => {
               </select>
             </div>
             <input placeholder="Thumbnail URL" value={newItem.thumbnail} onChange={e => setNewItem({...newItem, thumbnail: e.target.value})} className={inputCls} />
+            <label className="block text-xs text-gray-400">
+              Or upload an image from this device
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={uploadingTarget === 'portfolio'} onChange={e => { void handleImageUpload(e.target.files?.[0], 'portfolio'); e.currentTarget.value = ''; }} className="mt-2 block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gold/10 file:px-3 file:py-2 file:font-semibold file:text-gold" />
+            </label>
+            <p className="text-[10px] leading-5 text-gray-500">Google Drive images must be shared with “Anyone with the link”. Direct image URLs or uploaded files are more reliable.</p>
+            {uploadingTarget === 'portfolio' && <p className="text-xs text-gray-400">Uploading image…</p>}
+            {newItem.thumbnail && <img src={normalizeDriveImageUrl(newItem.thumbnail)} alt="Portfolio preview" className="max-h-48 w-full rounded-xl object-cover" />}
             <input placeholder="Full URL (hi-res image or video URL)" value={newItem.fullUrl} onChange={e => setNewItem({...newItem, fullUrl: e.target.value})} className={inputCls} />
             <input placeholder="Description" value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} className={inputCls} />
             <div className="flex gap-2">
-              <button onClick={handleAddPortfolio} className="px-4 py-2 rounded-lg bg-gold text-obsidian text-xs font-bold">Add</button>
+              <button onClick={handleAddPortfolio} disabled={uploadingTarget === 'portfolio'} className="px-4 py-2 rounded-lg bg-gold text-obsidian text-xs font-bold disabled:opacity-50">Add</button>
               <button onClick={() => setShowPortfolioForm(false)} className="px-4 py-2 rounded-lg border border-white/10 text-gray-400 text-xs">Cancel</button>
             </div>
           </div>

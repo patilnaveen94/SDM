@@ -43,13 +43,13 @@ export const Partners: React.FC = () => {
                   href={partner.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-gold/20 hover:bg-white/[0.06] transition-all duration-500"
+                  className="light-feature-card group flex flex-col items-center gap-3 p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-gold/20 hover:bg-white/[0.06] transition-all duration-500"
                   aria-label={partner.name}
                 >
                   <PartnerLogo partner={partner} />
                 </a>
               ) : (
-                <div className="group flex flex-col items-center gap-3 p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-gold/10 transition-all duration-500">
+                <div className="light-feature-card group flex flex-col items-center gap-3 p-5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-gold/10 transition-all duration-500">
                   <PartnerLogo partner={partner} />
                 </div>
               )}

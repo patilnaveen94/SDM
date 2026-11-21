@@ -11,6 +11,7 @@ import { ReportsPage } from './admin/ReportsPage';
 import { UpdatesPage } from './admin/UpdatesPage';
 import { MediaPage } from './admin/MediaPage';
 import { PartnersPage } from './admin/PartnersPage';
+import { TestimonialsPage } from './admin/TestimonialsPage';
 
 const App: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ const App: React.FC = () => {
           <Route path="/admin/reports" element={<ReportsPage />} />
           <Route path="/admin/updates" element={<UpdatesPage />} />
           <Route path="/admin/media" element={<MediaPage />} />
+          <Route path="/admin/testimonials" element={<TestimonialsPage />} />
           <Route path="/admin/partners" element={<PartnersPage />} />
         </Route>
       </Routes>

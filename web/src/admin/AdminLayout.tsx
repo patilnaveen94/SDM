@@ -11,6 +11,7 @@ const navItems = [
   { label: 'Orders', path: '/admin/orders', icon: '📋' },
   { label: 'Reports', path: '/admin/reports', icon: '📈' },
   { label: 'Updates', path: '/admin/updates', icon: '📢' },
+  { label: 'Testimonials', path: '/admin/testimonials', icon: '💬' },
   { label: 'Media', path: '/admin/media', icon: '🖼️' },
   { label: 'Partners', path: '/admin/partners', icon: '🤝' },
   { label: 'View Site', path: '/', icon: '🌐' },
@@ -84,7 +85,7 @@ export const AdminLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-obsidian">
+    <div className="admin-shell min-h-screen bg-obsidian">
       {/* Mobile header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-dark-surface/95 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between">
         <button

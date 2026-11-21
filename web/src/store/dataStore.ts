@@ -11,12 +11,14 @@ import {
   signOutAdmin,
   submitQuoteRequest as submitQuoteRequestToBackend,
 } from './backend';
+import { normalizeDriveImageUrl } from './mediaUpload';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface GearItem {
   id: string;
   name: string;
+  serialNumber?: string;
   category: 'camera' | 'lens' | 'anamorphic' | 'drone' | 'lighting' | 'gimbal' | 'audio' | 'accessory';
   brand: string;
   dailyRate: number;
@@ -43,12 +45,19 @@ export interface OrderItem {
   gearName: string;
   quantity: number;
   dailyRate: number;
+  includedAddon?: boolean;
+  bundleWithGearId?: string;
 }
 
 export interface PartialReturnEntry {
   returnedAt: string;
   items: OrderItem[];
   note: string;
+}
+
+export interface OrderPayment {
+  amount: number;
+  paidAt: string;
 }
 
 export interface Order {
@@ -66,7 +75,9 @@ export interface Order {
   rentalHoursPerPeriod?: 12 | 24;
   totalAmount: number;
   status: 'active' | 'partially_returned' | 'returned_pending_payment' | 'overdue' | 'settled';
-  paymentStatus: 'pending' | 'paid';
+  paymentStatus: 'pending' | 'partial' | 'paid';
+  amountPaid?: number;
+  paymentHistory?: OrderPayment[];
   createdAt: string;
   startDate: string;
   startTime?: string;
@@ -91,6 +102,7 @@ export interface UpdatePost {
   videoUrl?: string;
   createdAt: string;
   published: boolean;
+  showAsPopup?: boolean;
 }
 
 /** Saved customer profile for future autocomplete */
@@ -232,7 +244,7 @@ export function calculateEndDateTime(startDate: string, startTime: string, durat
 }
 
 export function calculateOrderTotal(items: OrderItem[], days: number): number {
-  return items.reduce((sum, item) => sum + item.dailyRate * item.quantity * days, 0);
+  return items.reduce((sum, item) => sum + (item.includedAddon ? 0 : item.dailyRate * item.quantity * days), 0);
 }
 
 export function isFutureOrderStart(order: Pick<Order, 'startDate' | 'startTime'>, now = new Date()): boolean {
@@ -246,7 +258,10 @@ export function isFutureOrderStart(order: Pick<Order, 'startDate' | 'startTime'>
 // ─── Gear CRUD ───────────────────────────────────────────────────────────────
 
 export function getGearInventory(): GearItem[] {
-  return getItem<GearItem>(KEYS.GEAR, []);
+  return getItem<GearItem>(KEYS.GEAR, []).map(gear => ({
+    ...gear,
+    image: normalizeDriveImageUrl(gear.image),
+  }));
 }
 
 export function getAvailableGear(): GearItem[] {
@@ -449,6 +464,17 @@ export function getOutstandingOrderItems(order: Order): OrderItem[] {
   });
 }
 
+export function getOrderAmountPaid(order: Order): number {
+  if (typeof order.amountPaid === 'number' && Number.isFinite(order.amountPaid)) {
+    return Math.min(Math.max(order.amountPaid, 0), order.totalAmount);
+  }
+  return order.paymentStatus === 'paid' ? order.totalAmount : 0;
+}
+
+export function getOrderBalance(order: Order): number {
+  return Math.max(0, order.totalAmount - getOrderAmountPaid(order));
+}
+
 /** Create order — status starts as 'active', gear counts auto-update */
 export function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'status' | 'paymentStatus' | 'totalAmount' | 'days'>): Order {
   return withBusinessStateBatch(() => {
@@ -458,12 +484,15 @@ export function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'status' | '
     const subtotal = calculateOrderTotal(order.items, days);
     const discountAmount = Math.min(Math.max(0, order.discountAmount || 0), subtotal);
     const totalAmount = subtotal - discountAmount;
+    const amountPaid = Math.min(Math.max(0, Number.isFinite(order.amountPaid) ? order.amountPaid || 0 : 0), totalAmount);
     const newOrder: Order = {
       ...order,
       id: generateId(),
       createdAt: new Date().toISOString(),
       status: 'active',
-      paymentStatus: 'pending',
+      paymentStatus: amountPaid >= totalAmount ? 'paid' : amountPaid > 0 ? 'partial' : 'pending',
+      amountPaid,
+      paymentHistory: amountPaid > 0 ? [{ amount: amountPaid, paidAt: new Date().toISOString() }] : [],
       discountAmount,
       totalAmount,
       days,
@@ -572,9 +601,17 @@ export function settleOrder(orderId: string): Order | null {
   const all = getOrders();
   const idx = all.findIndex(o => o.id === orderId);
   if (idx === -1) return null;
-  all[idx].status = 'settled';
-  all[idx].paymentStatus = 'paid';
-  all[idx].settledAt = new Date().toISOString();
+  const order = all[idx];
+  const balance = getOrderBalance(order);
+  const settledAt = new Date().toISOString();
+  order.status = 'settled';
+  order.paymentStatus = 'paid';
+  order.amountPaid = order.totalAmount;
+  order.paymentHistory = [
+    ...(order.paymentHistory || []),
+    ...(balance > 0 ? [{ amount: balance, paidAt: settledAt }] : []),
+  ];
+  order.settledAt = settledAt;
   setItem(KEYS.ORDERS, all);
   return all[idx];
 }
@@ -582,7 +619,10 @@ export function settleOrder(orderId: string): Order | null {
 // ─── Updates/Feed CRUD ───────────────────────────────────────────────────────
 
 export function getUpdates(): UpdatePost[] {
-  return getItem<UpdatePost>(KEYS.UPDATES, []);
+  return getItem<UpdatePost>(KEYS.UPDATES, []).map(post => ({
+    ...post,
+    image: post.image ? normalizeDriveImageUrl(post.image) : undefined,
+  }));
 }
 
 export function getPublishedUpdates(): UpdatePost[] {

@@ -6,7 +6,7 @@ The web application uses Supabase Postgres for shared business data and Supabase
 
 1. Create a Supabase project in the region closest to Bengaluru and save the database password in a password manager.
 2. In **Project Settings → API**, copy the Project URL and the publishable key (or legacy anon key).
-3. In **SQL Editor**, run [`supabase/migrations/20261120190000_initial.sql`](./supabase/migrations/20261120190000_initial.sql) once.
+3. In **SQL Editor**, run [`supabase/migrations/20261120190000_initial.sql`](./supabase/migrations/20261120190000_initial.sql) once, then apply subsequent migration files in timestamp order. The testimonials and media migration is [`supabase/migrations/20261121190000_testimonials_and_media.sql`](./supabase/migrations/20261121190000_testimonials_and_media.sql).
 4. In **Authentication → Users**, invite/create the first administrator using an individual email account. Do not use a shared password. Opening the invitation establishes an administrator session; the app's `/admin` page prompts the user to create their own password. If the invite redirects to the public homepage, open `/admin` in that same browser.
 5. Copy that user's UUID and grant the allowlist entry in SQL Editor:
 
@@ -17,7 +17,7 @@ The web application uses Supabase Postgres for shared business data and Supabase
 
 6. Disable public sign-ups in **Authentication → Settings**. Administrators must be created/invited by the project owner and added to `sdm_admin_users`. Use individual accounts with strong passwords and set the production Site URL to the deployed admin URL (for example `https://example.com/admin`) and add the deployed website to the redirect allowlist. This app does not yet implement an MFA step-up screen; do not enforce an MFA policy until that flow has been added and tested.
 
-The RLS policies keep orders, customer profiles, quotations, and unpublished content private to allowlisted administrators. Anonymous website visitors can read only public catalog/content through a filtered database function and can submit validated enquiries; they cannot read the enquiry queue. A phone-based cooldown and an overall request cap are included. Add a CAPTCHA/Turnstile verification flow before promoting the public enquiry form heavily.
+The RLS policies keep orders, customer profiles, quotations, testimonial contact details, and unpublished content private to allowlisted administrators. Anonymous website visitors can read only public catalog/content through filtered database views/functions and can submit validated enquiries and pending testimonials; they cannot read the enquiry queue. Testimonial photos stay in private storage until approval. A phone-based cooldown and an overall request cap are included. Add a CAPTCHA/Turnstile verification flow before promoting public submissions heavily.
 
 ## 2. Configure and run the web app
 
@@ -56,6 +56,7 @@ The SQL migration is not automatically run by Vercel; apply migrations through S
 - The current synchronous store API is retained. Each collection is persisted as a JSONB snapshot in `sdm_app_state`; order creation and item-return/inventory changes use an atomic, revision-checked database batch. A concurrent edit that has a stale revision is rejected and shown in an on-screen error rather than silently overwriting the newer database state; refresh before retrying.
 - Admin pages load the latest shared data at sign-in/page startup; refresh a second open device after another administrator makes changes.
 - Public quote forms write directly to `sdm_quote_requests` through a validated RPC. Administrators review and update requests through the admin panel.
+- Testimonial submissions require a photo and phone number; only approved names, photos, and text are available to the public. The phone number remains administrator-only. Public media uploads use the `sdm-public-media` bucket and require an administrator session.
 - The legacy browser data is not automatically uploaded. If an empty Supabase database and old local records are found, the admin panel offers a one-time import from that browser. Review the data and import from the browser that contains the authoritative live records. Demo-mode data remains browser-only and is never synchronized.
 - Invoice/quotation generation and payment status are supported, but this integration does not process payments, send email/SMS, or issue electronic tax invoices. Confirm GST/business invoice requirements with your accountant before using generated invoices as tax invoices.
 - Aadhaar/PAN and customer contact information are business-sensitive. Limit administrator accounts, use MFA, avoid shared devices, and establish an appropriate retention/privacy policy. Do not collect identity numbers unless operationally necessary.

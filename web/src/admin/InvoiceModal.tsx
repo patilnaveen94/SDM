@@ -1,6 +1,6 @@
 import React from 'react';
 import { businessInfo } from '../assetsConfig';
-import { calculateOrderTotal, Order } from '../store/dataStore';
+import { calculateOrderTotal, getOrderAmountPaid, getOrderBalance, Order } from '../store/dataStore';
 
 interface InvoiceModalProps {
   order: Order;
@@ -12,6 +12,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
   const discount = order.discountAmount || 0;
   const invoiceDate = order.settledAt || order.createdAt;
   const isPaid = order.paymentStatus === 'paid';
+  const isPartial = order.paymentStatus === 'partial';
+  const amountPaid = getOrderAmountPaid(order);
+  const balanceDue = getOrderBalance(order);
   const hireHours = order.rentalHoursPerPeriod || 24;
   const periodLabel = order.rentalHoursPerPeriod
     ? `${hireHours}-hour hire period${order.days === 1 ? '' : 's'}`
@@ -61,17 +64,17 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
               </div>
             </header>
 
-            <div className={`my-6 flex flex-col justify-between gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center ${isPaid ? 'border-green-200 bg-green-50' : 'border-amber-300 bg-amber-50'}`}>
+            <div className={`my-6 flex flex-col justify-between gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center ${isPaid ? 'border-green-200 bg-green-50' : isPartial ? 'border-blue-200 bg-blue-50' : 'border-amber-300 bg-amber-50'}`}>
               <div>
-                <p className={`text-xs font-bold uppercase tracking-[0.16em] ${isPaid ? 'text-green-800' : 'text-amber-800'}`}>
-                  {isPaid ? 'Payment received' : 'Payment pending'}
+                <p className={`text-xs font-bold uppercase tracking-[0.16em] ${isPaid ? 'text-green-800' : isPartial ? 'text-blue-800' : 'text-amber-800'}`}>
+                  {isPaid ? 'Payment received' : isPartial ? 'Partial payment received' : 'Payment pending'}
                 </p>
-                <p className={`mt-0.5 text-sm ${isPaid ? 'text-green-700' : 'text-amber-800'}`}>
-                  {isPaid ? 'This invoice has been paid in full.' : 'Please arrange payment for the outstanding invoice total.'}
+                <p className={`mt-0.5 text-sm ${isPaid ? 'text-green-700' : isPartial ? 'text-blue-800' : 'text-amber-800'}`}>
+                  {isPaid ? 'This invoice has been paid in full.' : `₹${amountPaid.toLocaleString('en-IN')} received; ₹${balanceDue.toLocaleString('en-IN')} remains due.`}
                 </p>
               </div>
-              <span className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wider ${isPaid ? 'bg-green-700 text-white' : 'bg-amber-500 text-white'}`}>
-                {isPaid ? 'Paid' : 'Payment pending'}
+              <span className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wider ${isPaid ? 'bg-green-700 text-white' : isPartial ? 'bg-blue-700 text-white' : 'bg-amber-500 text-white'}`}>
+                {isPaid ? 'Paid' : isPartial ? 'Partially paid' : 'Payment pending'}
               </span>
             </div>
 
@@ -109,11 +112,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
                 <tbody>
                   {order.items.map((item, index) => (
                     <tr key={`${item.gearId}-${index}`} className="border-b border-gray-200">
-                      <td className="px-3 py-4 font-medium text-gray-900">{item.gearName}</td>
+                      <td className="px-3 py-4 font-medium text-gray-900">
+                        {item.gearName}
+                        {item.includedAddon && <span className="block text-[10px] font-normal text-gray-500">Included with camera</span>}
+                      </td>
                       <td className="px-2 py-4 text-right text-gray-700">{item.quantity}</td>
                       <td className="px-2 py-4 text-right text-gray-700">{order.days} {order.rentalHoursPerPeriod ? 'periods' : 'days'}</td>
-                      <td className="px-2 py-4 text-right text-gray-700">₹{item.dailyRate.toLocaleString('en-IN')}</td>
-                      <td className="px-3 py-4 text-right font-semibold text-gray-900">₹{(item.dailyRate * item.quantity * order.days).toLocaleString('en-IN')}</td>
+                      <td className="px-2 py-4 text-right text-gray-700">{item.includedAddon ? 'Included' : `₹${item.dailyRate.toLocaleString('en-IN')}`}</td>
+                      <td className="px-3 py-4 text-right font-semibold text-gray-900">{item.includedAddon ? 'Included' : `₹${(item.dailyRate * item.quantity * order.days).toLocaleString('en-IN')}`}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -131,9 +137,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
                 <div className="flex justify-between border-t border-gray-300 pt-3 text-lg font-bold text-gray-950">
                   <span>Invoice total</span><span>₹{order.totalAmount.toLocaleString('en-IN')}</span>
                 </div>
-                {!isPaid && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Amount paid</span><span>₹{amountPaid.toLocaleString('en-IN')}</span>
+                </div>
+                {balanceDue > 0 && (
                   <div className="flex justify-between rounded-lg bg-amber-50 px-3 py-2 font-semibold text-amber-800">
-                    <span>Balance due</span><span>₹{order.totalAmount.toLocaleString('en-IN')}</span>
+                    <span>Balance due</span><span>₹{balanceDue.toLocaleString('en-IN')}</span>
                   </div>
                 )}
               </div>

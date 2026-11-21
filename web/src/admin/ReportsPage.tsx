@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { getGearInventoryBreakdown, getOrders, Order } from '../store/dataStore';
+import { getGearInventoryBreakdown, getOrderBalance, getOrders, Order } from '../store/dataStore';
 
 type ReportPeriod = 'week' | 'month' | 'custom';
 
@@ -71,13 +71,19 @@ export const ReportsPage: React.FC = () => {
     const date = order.createdAt.slice(0, 10);
     return date >= startDate && date <= endDate;
   });
-  const collections = allOrders.filter(order => order.paymentStatus === 'paid' && order.settledAt)
-    .filter(order => order.settledAt!.slice(0, 10) >= startDate && order.settledAt!.slice(0, 10) <= endDate);
-  const collectedAmount = collections.reduce((sum, order) => sum + order.totalAmount, 0);
+  const collections = allOrders.flatMap(order => {
+    const payments = order.paymentHistory || (order.paymentStatus === 'paid' && order.settledAt
+      ? [{ amount: order.totalAmount, paidAt: order.settledAt }]
+      : []);
+    return payments
+      .filter(payment => payment.paidAt.slice(0, 10) >= startDate && payment.paidAt.slice(0, 10) <= endDate)
+      .map(payment => ({ order, payment }));
+  });
+  const collectedAmount = collections.reduce((sum, entry) => sum + entry.payment.amount, 0);
   const estimatedCollection = periodOrders.reduce((sum, order) => sum + order.totalAmount, 0);
   const totalDiscount = periodOrders.reduce((sum, order) => sum + (order.discountAmount || 0), 0);
   const pendingOrders = allOrders.filter(order => order.paymentStatus !== 'paid');
-  const pendingCollection = pendingOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const pendingCollection = pendingOrders.reduce((sum, order) => sum + getOrderBalance(order), 0);
   const returnActivity: ReturnActivity[] = allOrders.flatMap(order => [
     ...(order.partialReturns || [])
       .filter(entry => entry.returnedAt.slice(0, 10) >= startDate && entry.returnedAt.slice(0, 10) <= endDate)
@@ -164,7 +170,7 @@ export const ReportsPage: React.FC = () => {
         order.days,
         order.totalAmount + (order.discountAmount || 0),
         order.discountAmount || 0,
-        order.totalAmount,
+        getOrderBalance(order),
         order.paymentStatus,
         getStatusLabel(order),
         (order.partialReturns || []).map(entry => entry.items.map(item => `${item.gearName} x${item.quantity}`).join('; ')).filter(Boolean).join(' | '),
@@ -174,7 +180,7 @@ export const ReportsPage: React.FC = () => {
       [],
       ['Payments received in period'],
       ['Order ID', 'Payment date', 'Customer', 'Amount (INR)'],
-      ...collections.map(order => [order.id, order.settledAt || '', order.customerName, order.totalAmount]),
+      ...collections.map(({ order, payment }) => [order.id, payment.paidAt, order.customerName, payment.amount]),
       [],
       ['Currently pending collection - all unpaid orders'],
       ['Order ID', 'Created', 'Customer', 'Phone', 'Items', 'Amount due (INR)', 'Order status', 'Missing items', 'Return notes'],
@@ -289,7 +295,9 @@ export const ReportsPage: React.FC = () => {
                     <td className="py-3 text-right">{formatCurrency(order.totalAmount + (order.discountAmount || 0))}</td>
                     <td className="py-3 text-right">{formatCurrency(order.discountAmount || 0)}</td>
                     <td className="py-3 text-right font-semibold text-white">{formatCurrency(order.totalAmount)}</td>
-                    <td className="py-3 text-right">{order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}</td>
+                    <td className="py-3 text-right">
+                      {order.paymentStatus === 'paid' ? 'Paid' : order.paymentStatus === 'partial' ? `Partial · ${formatCurrency(getOrderBalance(order))} due` : `Pending · ${formatCurrency(getOrderBalance(order))} due`}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -324,7 +324,7 @@ export const BookingEngine: React.FC = () => {
               </div>
 
               {/* Right: Booking Form */}
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7 lg:p-8">
+              <div className="light-feature-card rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7 lg:p-8">
                 <h3 className="text-xl font-heading font-semibold text-white mb-2">Check Availability</h3>
                 {selectedPackage && (
                   <div className="mb-5 px-3 py-2 bg-gold/10 border border-gold/20 rounded-xl flex items-center gap-2">
@@ -457,7 +457,7 @@ export const BookingEngine: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.06 }}
-                      className="group overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03] transition-all duration-300 hover:-translate-y-1 hover:border-gold/20"
+                      className="light-feature-card group overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03] transition-all duration-300 hover:-translate-y-1 hover:border-gold/20"
                     >
                       <div className="relative h-28 overflow-hidden min-[420px]:h-36 sm:h-44">
                         {gear.image ? (
@@ -654,7 +654,7 @@ const PackageCard: React.FC<{ pkg: EventPackage; index: number; onSelect: () => 
     animate={{ opacity: 1, x: 0 }}
     transition={{ delay: index * 0.06 }}
     onClick={onSelect}
-    className={`flex gap-4 p-4 rounded-2xl border cursor-pointer transition-all duration-300 ${selected ? 'bg-gold/5 border-gold/40' : 'bg-white/[0.03] border-white/5 hover:border-gold/20 hover:bg-white/[0.05]'}`}
+    className={`light-feature-card flex gap-4 p-4 rounded-2xl border cursor-pointer transition-all duration-300 ${selected ? 'bg-gold/5 border-gold/40' : 'bg-white/[0.03] border-white/5 hover:border-gold/20 hover:bg-white/[0.05]'}`}
   >
     {pkg.image && (
       <img src={pkg.image} alt={pkg.title} loading="lazy" className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />

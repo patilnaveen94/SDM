@@ -1,154 +1,217 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { academyCourses } from '../assetsConfig';
+import { businessInfo } from '../assetsConfig';
 
-interface QueryFormData { studentName: string; email: string; phone: string; courseInterest: string; message: string; }
+interface QueryFormData {
+  studentName: string;
+  email: string;
+  phone: string;
+  interest: string;
+  message: string;
+}
+
+type QueryFormField = keyof QueryFormData;
+
+const learningAreas = [
+  {
+    number: '01',
+    title: 'Photography & camera craft',
+    description: 'Build confidence with camera controls, exposure, composition and visual storytelling.',
+    accent: 'from-amber-400/20 to-orange-500/5',
+  },
+  {
+    number: '02',
+    title: 'Cinematography & lighting',
+    description: 'Explore camera movement, lighting setups and practical techniques for production.',
+    accent: 'from-violet-400/20 to-blue-500/5',
+  },
+  {
+    number: '03',
+    title: 'Editing & post-production',
+    description: 'Learn about editing workflows, color and preparing projects for delivery.',
+    accent: 'from-teal-400/20 to-cyan-500/5',
+  },
+];
+
+const initialForm: QueryFormData = {
+  studentName: '',
+  email: '',
+  phone: '',
+  interest: '',
+  message: '',
+};
 
 export const Academy: React.FC = () => {
-  const [queryForm, setQueryForm] = useState<QueryFormData>({ studentName: '', email: '', phone: '', courseInterest: '', message: '' });
-  const [queryErrors, setQueryErrors] = useState<Partial<QueryFormData>>({});
-  const [querySubmitted, setQuerySubmitted] = useState(false);
-  const sectionRef = useRef<HTMLDivElement>(null);
+  const [queryForm, setQueryForm] = useState<QueryFormData>(initialForm);
+  const [queryErrors, setQueryErrors] = useState<Partial<Record<QueryFormField, string>>>({});
+  const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: '-10%' });
 
-  const validateQuery = (): boolean => {
-    const errors: Partial<QueryFormData> = {};
-    if (!queryForm.studentName.trim()) errors.studentName = 'Required';
-    if (!queryForm.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.email = 'Valid email required';
-    if (!queryForm.phone.match(/^\d{10}$/)) errors.phone = '10-digit phone required';
-    if (!queryForm.courseInterest) errors.courseInterest = 'Select a course';
-    if (!queryForm.message.trim()) errors.message = 'Required';
-    setQueryErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const errors: Partial<Record<QueryFormField, string>> = {};
+    const phone = queryForm.phone.replace(/\D/g, '');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateQuery()) {
-      setQuerySubmitted(true);
-      setTimeout(() => setQuerySubmitted(false), 4000);
-      setQueryForm({ studentName: '', email: '', phone: '', courseInterest: '', message: '' });
+    if (!queryForm.studentName.trim()) errors.studentName = 'Enter your name.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(queryForm.email)) errors.email = 'Enter a valid email address.';
+    if (phone.length !== 10) errors.phone = 'Enter a 10-digit phone number.';
+    if (!queryForm.interest) errors.interest = 'Choose an area you are interested in.';
+    if (!queryForm.message.trim()) errors.message = 'Add a short message.';
+
+    setQueryErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const message = [
+      'Hello SDM, I am interested in training.',
+      `Name: ${queryForm.studentName.trim()}`,
+      `Email: ${queryForm.email.trim()}`,
+      `Phone: ${phone}`,
+      `Area of interest: ${queryForm.interest}`,
+      `Message: ${queryForm.message.trim()}`,
+    ].join('\n');
+    const whatsappNumber = businessInfo.whatsapp.replace(/\D/g, '');
+    const whatsappWindow = window.open(
+      `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,
+      '_blank',
+    );
+
+    if (whatsappWindow) {
+      whatsappWindow.opener = null;
+    } else {
+      window.location.assign(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`);
     }
   };
 
-  const inputClasses = "w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-gold focus:outline-none transition-all duration-300";
+  const inputClasses = 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-white placeholder-gray-500 outline-none transition-colors focus:border-gold sm:px-5';
+  const errorMessage = (field: QueryFormField) => queryErrors[field]
+    ? <p className="mt-1 text-xs text-red-400" role="alert">{queryErrors[field]}</p>
+    : null;
 
   return (
     <section id="academy" ref={sectionRef} className="scroll-mt-20 border-t border-white/5 py-16 sm:py-20 md:py-28">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 32 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-10 sm:mb-14"
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-10 max-w-3xl sm:mb-14"
         >
-          <span className="text-gold text-xs font-bold uppercase tracking-[4px]">Training</span>
-          <h2 className="mt-3 text-3xl font-heading font-bold leading-tight sm:text-4xl md:text-6xl lg:text-7xl">
+          <span className="text-xs font-bold uppercase tracking-[4px] text-gold">Learn with SDM</span>
+          <h2 className="mt-3 text-3xl font-heading font-bold leading-tight sm:text-4xl md:text-6xl">
             SDM <span className="text-gold-gradient">Academy.</span>
           </h2>
-          <p className="mt-4 max-w-xl text-sm leading-6 text-gray-400 sm:text-base sm:leading-7">
-            Master visual storytelling through government-accredited masterclasses.
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400 sm:text-base">
+            Practical learning for people who want to grow their skills in visual production.
+            Get in touch to discuss your goals and ask about current training options.
           </p>
         </motion.div>
 
-        {/* Course Cards - horizontal scroll on mobile, grid on desktop */}
-        <div className="mb-16 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:mb-20 lg:grid-cols-3 lg:gap-6">
-          {academyCourses.map((course, i) => (
-            <motion.div
-              key={course.id}
-              initial={{ opacity: 0, y: 30 }}
+        <div className="mb-12 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:mb-16 lg:grid-cols-3">
+          {learningAreas.map((area, index) => (
+            <motion.article
+              key={area.number}
+              initial={{ opacity: 0, y: 24 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.2 + i * 0.15, duration: 0.8 }}
-              className="group overflow-hidden rounded-3xl border border-white/5 bg-white/[0.03] transition-all duration-300 hover:-translate-y-1 hover:border-gold/20"
+              transition={{ delay: 0.12 + index * 0.12, duration: 0.7 }}
+              className={`light-feature-card rounded-3xl border border-white/5 bg-gradient-to-br ${area.accent} p-6 sm:p-7`}
             >
-              <div className="relative h-44 overflow-hidden sm:h-52">
-                <img src={course.image} alt={course.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-obsidian/80 to-transparent" />
-                <div className="absolute top-4 left-4 flex gap-2">
-                  <span className="px-2.5 py-1 bg-gold rounded-lg text-[10px] font-bold text-obsidian uppercase">{course.level}</span>
-                  <span className="px-2.5 py-1 bg-white/10 backdrop-blur-sm rounded-lg text-[10px] text-white">{course.duration}</span>
-                </div>
-                <div className="absolute bottom-4 right-4 flex items-center gap-1 bg-obsidian/70 backdrop-blur-sm px-2 py-1 rounded-lg">
-                  <span className="text-gold text-xs">★</span>
-                  <span className="text-white text-xs font-medium">{course.rating}</span>
-                </div>
-              </div>
-
-              <div className="p-4 sm:p-6">
-                <h3 className="font-heading text-base font-bold text-white sm:text-lg">{course.title}</h3>
-                <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-500">{course.description}</p>
-
-                <div className="mt-4 space-y-2.5">
-                  {course.syllabus.slice(0, 3).map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs leading-5 text-gray-400">
-                      <div className="w-1 h-1 bg-gold rounded-full flex-shrink-0" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                  {course.syllabus.length > 3 && <p className="text-[11px] text-gold pl-3">+{course.syllabus.length - 3} more</p>}
-                </div>
-
-                <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/5 pt-4">
-                  <span className="text-lg font-bold text-gold sm:text-xl">₹{course.price.toLocaleString()}</span>
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider">{course.enrolledCount} enrolled</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQueryForm(current => ({ ...current, courseInterest: course.id }));
-                    document.getElementById('academy-query')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }}
-                  className="mt-4 flex min-h-11 w-full items-center justify-center rounded-xl border border-white/10 text-sm font-semibold text-white transition-colors hover:border-gold/40 hover:text-gold"
-                >
-                  Ask about this course <span className="ml-2" aria-hidden="true">→</span>
-                </button>
-              </div>
-            </motion.div>
+              <span className="font-mono text-sm text-gold">{area.number}</span>
+              <h3 className="mt-5 font-heading text-xl font-bold text-white">{area.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-gray-400">{area.description}</p>
+            </motion.article>
           ))}
         </div>
 
-        {/* Query Form */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           id="academy-query"
-          className="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.015] p-5 sm:p-7 md:p-10"
+          className="light-feature-card mx-auto max-w-3xl rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.015] p-5 sm:p-8 md:p-10"
         >
-          <h3 className="mb-2 text-center font-heading text-xl font-bold text-white sm:text-2xl">Let’s plan your learning</h3>
-          <p className="mb-6 text-center text-sm leading-6 text-gray-500 sm:mb-8">Tell us what you’re interested in and our team will help you find the right course.</p>
+          <div className="mb-7 text-center">
+            <h3 className="font-heading text-xl font-bold text-white sm:text-2xl">Tell us what you want to learn</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-gray-500">
+              Share your interests and we’ll help you discuss suitable options, availability and fees.
+            </p>
+          </div>
 
-          {querySubmitted ? (
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="text-center py-12">
-              <div className="text-4xl mb-3">✓</div>
-              <h4 className="text-lg font-semibold">Query Sent</h4>
-              <p className="text-gray-400 mt-1 text-sm">We'll be in touch shortly.</p>
-            </motion.div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <input type="text" autoComplete="name" aria-label="Your name" placeholder="Your Name" value={queryForm.studentName} onChange={e => setQueryForm({...queryForm, studentName: e.target.value})} className={inputClasses} />
-                  {queryErrors.studentName && <p className="text-red-400 text-xs mt-1">{queryErrors.studentName}</p>}
-                </div>
-                <div>
-                  <input type="tel" inputMode="numeric" autoComplete="tel" aria-label="Phone number" placeholder="Phone" value={queryForm.phone} onChange={e => setQueryForm({...queryForm, phone: e.target.value})} className={inputClasses} />
-                  {queryErrors.phone && <p className="text-red-400 text-xs mt-1">{queryErrors.phone}</p>}
-                </div>
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <input
+                  type="text"
+                  autoComplete="name"
+                  aria-label="Your name"
+                  aria-invalid={Boolean(queryErrors.studentName)}
+                  placeholder="Your name"
+                  value={queryForm.studentName}
+                  onChange={event => setQueryForm({ ...queryForm, studentName: event.target.value })}
+                  className={inputClasses}
+                />
+                {errorMessage('studentName')}
               </div>
-              <input type="email" autoComplete="email" aria-label="Email address" placeholder="Email" value={queryForm.email} onChange={e => setQueryForm({...queryForm, email: e.target.value})} className={inputClasses} />
-              {queryErrors.email && <p className="text-red-400 text-xs -mt-2">{queryErrors.email}</p>}
-              <select value={queryForm.courseInterest} onChange={e => setQueryForm({...queryForm, courseInterest: e.target.value})} className={inputClasses + ' appearance-none'}>
-                <option value="">Course of Interest</option>
-                {academyCourses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              <div>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  aria-label="Phone number"
+                  aria-invalid={Boolean(queryErrors.phone)}
+                  placeholder="10-digit phone number"
+                  value={queryForm.phone}
+                  onChange={event => setQueryForm({ ...queryForm, phone: event.target.value })}
+                  className={inputClasses}
+                />
+                {errorMessage('phone')}
+              </div>
+            </div>
+            <div>
+              <input
+                type="email"
+                autoComplete="email"
+                aria-label="Email address"
+                aria-invalid={Boolean(queryErrors.email)}
+                placeholder="Email address"
+                value={queryForm.email}
+                onChange={event => setQueryForm({ ...queryForm, email: event.target.value })}
+                className={inputClasses}
+              />
+              {errorMessage('email')}
+            </div>
+            <div>
+              <select
+                aria-label="Area of interest"
+                aria-invalid={Boolean(queryErrors.interest)}
+                value={queryForm.interest}
+                onChange={event => setQueryForm({ ...queryForm, interest: event.target.value })}
+                className={`${inputClasses} appearance-none`}
+              >
+                <option value="">Area of interest</option>
+                {learningAreas.map(area => <option key={area.number} value={area.title}>{area.title}</option>)}
+                <option value="Not sure yet">Not sure yet</option>
               </select>
-              {queryErrors.courseInterest && <p className="text-red-400 text-xs -mt-2">{queryErrors.courseInterest}</p>}
-              <textarea aria-label="Your question" placeholder="Your question..." value={queryForm.message} onChange={e => setQueryForm({ ...queryForm, message: e.target.value })} rows={4} className={inputClasses + ' resize-y'} />
-              {queryErrors.message && <p className="text-red-400 text-xs -mt-2">{queryErrors.message}</p>}
-              <button type="submit" className="w-full py-4 rounded-xl bg-gold text-obsidian font-bold hover:bg-gold-light transition-colors">Send Query</button>
-            </form>
-          )}
+              {errorMessage('interest')}
+            </div>
+            <div>
+              <textarea
+                aria-label="Your goals or question"
+                aria-invalid={Boolean(queryErrors.message)}
+                placeholder="What would you like to learn?"
+                value={queryForm.message}
+                onChange={event => setQueryForm({ ...queryForm, message: event.target.value })}
+                rows={4}
+                className={`${inputClasses} resize-y`}
+              />
+              {errorMessage('message')}
+            </div>
+            <button type="submit" className="w-full rounded-xl bg-gold px-5 py-3.5 font-bold text-obsidian transition-colors hover:bg-gold-light">
+              Continue on WhatsApp <span aria-hidden="true">→</span>
+            </button>
+            <p className="text-center text-xs leading-5 text-gray-500">
+              Your details will be added to a WhatsApp message addressed to SDM. No course enrollment or payment is made here.
+            </p>
+          </form>
         </motion.div>
       </div>
     </section>

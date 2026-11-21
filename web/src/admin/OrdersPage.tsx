@@ -35,6 +35,7 @@ export const OrdersPage: React.FC = () => {
   const [eventType, setEventType] = useState('');
   const [notes, setNotes] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [amountPaid, setAmountPaid] = useState(0);
   const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const [returnOrder, setReturnOrder] = useState<Order | null>(null);
   const [returnQuantities, setReturnQuantities] = useState<Record<string, number>>({});
@@ -64,6 +65,8 @@ export const OrdersPage: React.FC = () => {
   const calculatedTotal = calculateOrderTotal(selectedItems, days);
   const appliedDiscount = Math.min(Math.max(0, discountAmount), calculatedTotal);
   const orderTotal = calculatedTotal - appliedDiscount;
+  const initialPayment = Math.min(Math.max(0, amountPaid), orderTotal);
+  const balanceDue = orderTotal - initialPayment;
 
   useEffect(() => {
     const state = location.state as { quoteRequest?: QuoteRequest } | null;
@@ -126,11 +129,32 @@ export const OrdersPage: React.FC = () => {
 
   const addItemToOrder = (gearId: string) => {
     const item = gear.find(g => g.id === gearId);
-    if (!item) return;
+    if (!item || item.category === 'accessory') return;
     if (selectedItems.find(i => i.gearId === gearId)) return;
     const availQty = item.totalStock - item.currentlyRented;
     if (availQty <= 0) return;
     setSelectedItems([...selectedItems, { gearId: item.id, gearName: item.name, quantity: 1, dailyRate: item.dailyRate }]);
+  };
+
+  const addBundleAccessory = (cameraId: string, accessoryId: string) => {
+    const accessory = gear.find(item => item.id === accessoryId && item.category === 'accessory');
+    if (!accessory) return;
+    const alreadySelected = selectedItems.some(item => item.gearId === accessoryId);
+    if (!alreadySelected && accessory.totalStock - accessory.currentlyRented <= 0) return;
+    if (alreadySelected) {
+      setSelectedItems(current => current.map(item => item.gearId === accessoryId
+        ? { ...item, dailyRate: 0, includedAddon: true, bundleWithGearId: cameraId }
+        : item));
+      return;
+    }
+    setSelectedItems(current => [...current, {
+      gearId: accessory.id,
+      gearName: accessory.name,
+      quantity: 1,
+      dailyRate: 0,
+      includedAddon: true,
+      bundleWithGearId: cameraId,
+    }]);
   };
 
   const updateItemQty = (gearId: string, qty: number) => {
@@ -141,14 +165,14 @@ export const OrdersPage: React.FC = () => {
   };
 
   const removeItemFromOrder = (gearId: string) => {
-    setSelectedItems(selectedItems.filter(i => i.gearId !== gearId));
+    setSelectedItems(selectedItems.filter(i => i.gearId !== gearId && i.bundleWithGearId !== gearId));
   };
 
   const resetForm = () => {
     setCustomerName(''); setCustomerPhone(''); setCustomerEmail('');
     setCustomerAadhaar(''); setCustomerPan('');
     setStartDate(''); setEndDate(''); setRentalPeriods(1); setGearSearch('');
-    setSelectedItems([]); setEventType(''); setNotes(''); setDiscountAmount(0);
+    setSelectedItems([]); setEventType(''); setNotes(''); setDiscountAmount(0); setAmountPaid(0);
     setQuoteRequestId(null);
   };
 
@@ -172,6 +196,7 @@ export const OrdersPage: React.FC = () => {
       eventType: orderType === 'event_booking' ? eventType : undefined,
       notes: notes || undefined,
       discountAmount: appliedDiscount,
+      amountPaid: initialPayment,
       rentalHoursPerPeriod: orderType === 'rental' ? 24 : undefined,
     });
     if (quoteRequestId) {
@@ -186,7 +211,9 @@ export const OrdersPage: React.FC = () => {
           `Order: ${order.id}`,
           `Gear: ${selectedItems.map(item => `${item.gearName} ×${item.quantity}`).join(', ')}`,
           `Rental dates: ${startDate} to ${orderEndDate}`,
-          `Approved estimate: ₹${order.totalAmount.toLocaleString('en-IN')}`,
+          `Order total: ₹${order.totalAmount.toLocaleString('en-IN')}`,
+          `Amount paid: ₹${(order.amountPaid || 0).toLocaleString('en-IN')}`,
+          `Balance due: ₹${(order.totalAmount - (order.amountPaid || 0)).toLocaleString('en-IN')}`,
           '',
           'Please contact us if you have any questions.',
         ].join('\n');
@@ -447,7 +474,8 @@ export const OrdersPage: React.FC = () => {
 
             {/* Select Gear Items */}
             <div className="mb-6">
-              <h3 className="text-xs text-gold uppercase tracking-wider font-bold mb-3">Select Items</h3>
+              <h3 className="text-xs text-gold uppercase tracking-wider font-bold mb-1">Select Items</h3>
+              <p className="mb-3 text-[10px] leading-5 text-gray-500">Choose lenses as separate rental items. Camera accessories can be added as an included bundle.</p>
               <input
                 type="search"
                 value={gearSearch}
@@ -457,14 +485,14 @@ export const OrdersPage: React.FC = () => {
                 className={inputCls + ' mb-3'}
               />
               <div className="max-h-48 overflow-y-auto space-y-2 custom-scrollbar pr-2">
-                {gear.filter(item => `${item.name} ${item.brand} ${item.category}`.toLowerCase().includes(gearSearch.trim().toLowerCase())).map(g => {
+                {gear.filter(item => item.category !== 'accessory' && `${item.name} ${item.brand} ${item.category}`.toLowerCase().includes(gearSearch.trim().toLowerCase())).map(g => {
                   const avail = g.totalStock - g.currentlyRented;
                   const isSelected = selectedItems.find(i => i.gearId === g.id);
                   return (
                     <div key={g.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isSelected ? 'bg-gold/5 border-gold/30' : 'bg-white/[0.02] border-white/5 hover:border-white/10'}`}>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">{g.name}</p>
-                        <p className="text-gray-500 text-[10px]">{g.brand} • {g.category} • ₹{g.dailyRate}/24hr hire • {avail} available</p>
+                        <p className="text-gray-500 text-[10px]">{g.brand} • {g.category}{g.serialNumber ? ` • S/N ${g.serialNumber}` : ''} • ₹{g.dailyRate}/24hr hire • {avail} available</p>
                       </div>
                       {isSelected ? (
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -487,8 +515,51 @@ export const OrdersPage: React.FC = () => {
                   );
                 })}
                 {gear.length === 0 && <p className="text-gray-500 text-sm text-center py-4">No gear items. Add items in Gear page first.</p>}
-                {gear.length > 0 && !gear.some(item => `${item.name} ${item.brand} ${item.category}`.toLowerCase().includes(gearSearch.trim().toLowerCase())) && (
+                {gear.some(item => item.category !== 'accessory') && !gear.some(item => item.category !== 'accessory' && `${item.name} ${item.brand} ${item.category}`.toLowerCase().includes(gearSearch.trim().toLowerCase())) && (
                   <p className="text-gray-500 text-sm text-center py-4">No gear matches this search.</p>
+                )}
+              </div>
+              <div className="mt-4 rounded-xl border border-blue-400/15 bg-blue-500/[0.03] p-3">
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-blue-300">Included camera accessories</p>
+                <p className="mb-3 text-[10px] leading-5 text-gray-500">Bags, chargers, cards, batteries and similar accessories are added to stock tracking at no additional charge. Lenses stay separately priced.</p>
+                {selectedItems.filter(item => gear.find(g => g.id === item.gearId)?.category === 'camera').length === 0 ? (
+                  <p className="text-xs text-gray-500">Add a camera above to choose bundle accessories.</p>
+                ) : (
+                  selectedItems.filter(item => gear.find(g => g.id === item.gearId)?.category === 'camera').map(camera => {
+                    const accessories = gear.filter(item => item.category === 'accessory' && `${item.name} ${item.brand}`.toLowerCase().includes(gearSearch.trim().toLowerCase()));
+                    return (
+                      <div key={camera.gearId} className="mt-3 border-t border-white/5 pt-3">
+                        <p className="mb-2 text-xs font-medium text-white">For {camera.gearName}</p>
+                        {accessories.length === 0 ? <p className="text-xs text-gray-500">No accessories match this search.</p> : (
+                          <div className="space-y-2">
+                            {accessories.map(accessory => {
+                              const available = accessory.totalStock - accessory.currentlyRented;
+                              const selected = selectedItems.find(item => item.gearId === accessory.id);
+                              return (
+                                <div key={accessory.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.02] px-3 py-2">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-xs text-gray-200">{accessory.name}</p>
+                                    <p className="text-[10px] text-gray-500">{available} available · included</p>
+                                  </div>
+                                  {selected?.bundleWithGearId && selected.bundleWithGearId !== camera.gearId ? (
+                                    <span className="text-[10px] text-gray-500">Bundled with another camera</span>
+                                  ) : selected ? (
+                                    <div className="flex items-center gap-2">
+                                      <input type="number" min={1} max={available} value={selected.quantity} onChange={event => updateItemQty(accessory.id, Number(event.target.value))} aria-label={`${accessory.name} quantity`} className="w-14 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-center text-xs text-white" />
+                                      {!selected.includedAddon && <button type="button" onClick={() => addBundleAccessory(camera.gearId, accessory.id)} className="text-[10px] text-blue-300">Bundle</button>}
+                                      <button type="button" onClick={() => removeItemFromOrder(accessory.id)} aria-label={`Remove ${accessory.name}`} className="px-1 text-xs text-red-400">×</button>
+                                    </div>
+                                  ) : (
+                                    <button type="button" disabled={available <= 0} onClick={() => addBundleAccessory(camera.gearId, accessory.id)} className="rounded-lg bg-blue-400/10 px-3 py-1.5 text-xs font-medium text-blue-300 disabled:opacity-40">{available > 0 ? '+ Add' : 'N/A'}</button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -499,8 +570,8 @@ export const OrdersPage: React.FC = () => {
                 <p className="text-[10px] text-gold uppercase tracking-wider font-bold mb-2">Order Summary</p>
                 {selectedItems.map(item => (
                   <div key={item.gearId} className="flex justify-between text-sm text-gray-300 py-1">
-                    <span>{item.gearName} ×{item.quantity}</span>
-                    <span>₹{(item.dailyRate * item.quantity * days).toLocaleString()}</span>
+                    <span>{item.includedAddon ? `↳ ${item.gearName} ×${item.quantity} (included)` : `${item.gearName} ×${item.quantity}`}</span>
+                    <span>{item.includedAddon ? 'Included' : `₹${(item.dailyRate * item.quantity * days).toLocaleString()}`}</span>
                   </div>
                 ))}
                 <div className="mt-3 border-t border-gold/20 pt-3">
@@ -529,6 +600,24 @@ export const OrdersPage: React.FC = () => {
                 <div className="flex justify-between text-white font-bold text-base mt-2 pt-2 border-t border-gold/20">
                   <span>Total</span>
                   <span className="text-gold">₹{orderTotal.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="mt-4 border-t border-gold/20 pt-3">
+                  <label htmlFor="order-amount-paid" className="mb-2 block text-xs text-gray-300">Amount paid now (₹)</label>
+                  <input
+                    id="order-amount-paid"
+                    type="number"
+                    min={0}
+                    max={orderTotal}
+                    step="0.01"
+                    value={amountPaid}
+                    onChange={event => setAmountPaid(Math.min(orderTotal, Math.max(0, Number(event.target.value) || 0)))}
+                    className={inputCls}
+                  />
+                  <div className="mt-2 flex justify-between text-xs">
+                    <span className="text-green-400">Paid: ₹{initialPayment.toLocaleString('en-IN')}</span>
+                    <span className={balanceDue > 0 ? 'text-amber-300' : 'text-green-400'}>Balance: ₹{balanceDue.toLocaleString('en-IN')}</span>
+                  </div>
+                  <p className="mt-1 text-[10px] text-gray-500">Leave at ₹0 if no payment is received yet.</p>
                 </div>
               </div>
             )}
@@ -606,6 +695,9 @@ export const OrdersPage: React.FC = () => {
                   </div>
                   <div className="text-left sm:text-right sm:flex-shrink-0">
                     <p className="text-gold font-bold text-lg">₹{order.totalAmount.toLocaleString()}</p>
+                    <p className={`mt-1 text-[10px] ${order.paymentStatus === 'paid' ? 'text-green-400' : 'text-amber-300'}`}>
+                      {order.paymentStatus === 'paid' ? 'Paid in full' : `Balance ₹${Math.max(0, order.totalAmount - (order.amountPaid || 0)).toLocaleString('en-IN')}`}
+                    </p>
                     <p className="text-[10px] text-gray-500 mt-1">
                       {order.startDate} →<br />
                       {order.endDate}

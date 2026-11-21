@@ -80,7 +80,7 @@ export const InventoryPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="min-w-0">
                     <h2 className="text-white font-semibold">{gear.name}</h2>
-                    <p className="text-gray-500 text-xs mt-1">{gear.brand} · {gear.category} · {gear.totalStock} total units</p>
+                    <p className="text-gray-500 text-xs mt-1">{gear.brand} · {gear.category} · {gear.totalStock} total units{gear.serialNumber ? ` · S/N ${gear.serialNumber}` : ''}</p>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 text-center">
                     <div><p className="text-green-400 font-bold">{available}</p><p className="text-[10px] text-gray-500">Available</p></div>

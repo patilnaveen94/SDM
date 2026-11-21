@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { getGearInventory, addGearItem, updateGearItem, deleteGearItem, GearItem } from '../store/dataStore';
+import { uploadPublicMediaImage } from '../store/mediaUpload';
 
 const emptyForm: Omit<GearItem, 'id'> = {
   name: '',
+  serialNumber: '',
   category: 'camera',
   brand: '',
   dailyRate: 0,
@@ -33,12 +35,15 @@ export const GearPage: React.FC = () => {
   const [form, setForm] = useState<Omit<GearItem, 'id'>>(emptyForm);
   const [specsInput, setSpecsInput] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [formError, setFormError] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const refresh = () => setGear(getGearInventory());
 
   const openCreate = () => {
     setForm(emptyForm);
     setSpecsInput('');
+    setFormError('');
     setEditingId(null);
     setShowForm(true);
   };
@@ -46,14 +51,23 @@ export const GearPage: React.FC = () => {
   const openEdit = (item: GearItem) => {
     setForm(item);
     setSpecsInput(item.specs.join(', '));
+    setFormError('');
     setEditingId(item.id);
     setShowForm(true);
   };
 
   const handleSave = () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      setFormError('Enter an item name.');
+      return;
+    }
+    const serialNumber = form.serialNumber?.trim() || '';
+    if (serialNumber && gear.some(item => item.id !== editingId && item.serialNumber?.trim().toLowerCase() === serialNumber.toLowerCase())) {
+      setFormError('That serial number is already assigned to another gear item.');
+      return;
+    }
     const specs = specsInput.split(',').map(s => s.trim()).filter(Boolean);
-    const data = { ...form, specs };
+    const data = { ...form, serialNumber: serialNumber || undefined, specs };
     if (editingId) {
       updateGearItem(editingId, data);
     } else {
@@ -61,6 +75,20 @@ export const GearPage: React.FC = () => {
     }
     refresh();
     setShowForm(false);
+  };
+
+  const handleImageUpload = async (file?: File) => {
+    if (!file) return;
+    setIsUploadingImage(true);
+    setFormError('');
+    try {
+      const { url } = await uploadPublicMediaImage(file);
+      setForm(current => ({ ...current, image: url }));
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Could not upload this image.');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -142,10 +170,22 @@ export const GearPage: React.FC = () => {
               </div>
 
               <input placeholder="Brand" value={form.brand} onChange={e => setForm({...form, brand: e.target.value})} className={inputCls} />
+              <input
+                placeholder="Gear serial number (optional)"
+                value={form.serialNumber || ''}
+                onChange={e => setForm({...form, serialNumber: e.target.value})}
+                className={inputCls}
+              />
               <input type="number" placeholder="Daily Rate (₹)" value={form.dailyRate || ''} onChange={e => setForm({...form, dailyRate: Number(e.target.value)})} className={inputCls} />
               <textarea placeholder="Description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={2} className={inputCls + ' resize-none'} />
               <input placeholder="Specs (comma separated, e.g. 4K 120fps, Full Frame)" value={specsInput} onChange={e => setSpecsInput(e.target.value)} className={inputCls} />
+              <label className="block text-xs text-gray-400">
+                Upload image from this device
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={isUploadingImage} onChange={e => { void handleImageUpload(e.target.files?.[0]); e.currentTarget.value = ''; }} className="mt-2 block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gold/10 file:px-3 file:py-2 file:font-semibold file:text-gold" />
+              </label>
               <input placeholder="Image URL" value={form.image} onChange={e => setForm({...form, image: e.target.value})} className={inputCls} />
+              {isUploadingImage && <p className="text-xs text-gray-400">Uploading image…</p>}
+              {form.image && <img src={form.image} alt="Gear preview" className="h-28 w-full rounded-xl object-cover" />}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input type="number" placeholder="Total Stock" value={form.totalStock || ''} onChange={e => setForm({...form, totalStock: Number(e.target.value)})} className={inputCls} />
                 <input type="number" placeholder="Currently Rented" value={form.currentlyRented || ''} onChange={e => setForm({...form, currentlyRented: Number(e.target.value)})} className={inputCls} />
@@ -155,8 +195,9 @@ export const GearPage: React.FC = () => {
                 Available for rent
               </label>
             </div>
+            {formError && <p role="alert" className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-300">{formError}</p>}
             <div className="flex flex-col-reverse gap-3 mt-6 sm:flex-row">
-              <button onClick={handleSave} disabled={!form.name.trim()} className="flex-1 py-3 rounded-xl bg-gold text-obsidian font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed">Save</button>
+              <button onClick={handleSave} disabled={!form.name.trim() || isUploadingImage} className="flex-1 py-3 rounded-xl bg-gold text-obsidian font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed">Save</button>
               <button onClick={() => setShowForm(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-gray-400 text-sm">Cancel</button>
             </div>
           </div>
@@ -191,6 +232,7 @@ export const GearPage: React.FC = () => {
                     )}
                   </div>
                   <h3 className="text-white font-semibold text-sm mt-1">{item.name}</h3>
+                  {item.serialNumber && <p className="mt-1 text-[10px] text-gray-500">S/N: {item.serialNumber}</p>}
                   <div className="flex items-center justify-between mt-3">
                     <span className="text-gold font-bold">₹{item.dailyRate.toLocaleString()}/day</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded ${item.available ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>

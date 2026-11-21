@@ -1,4 +1,5 @@
 import { persistBusinessCollection } from './backend';
+import { normalizeDriveImageUrl } from './mediaUpload';
 
 /**
  * Media/Content configuration store.
@@ -24,9 +25,19 @@ const DEFAULT_CONFIG: MediaConfig = {
 export function getMediaConfig(): MediaConfig {
   try {
     const data = localStorage.getItem(KEY);
-    return data
+    const config: MediaConfig = data
       ? { ...DEFAULT_CONFIG, ...JSON.parse(data) }
       : { ...DEFAULT_CONFIG, portfolioItems: DEFAULT_CONFIG.portfolioItems.map(item => ({ ...item })) };
+    return {
+      ...config,
+      heroFallbackImage: normalizeDriveImageUrl(config.heroFallbackImage),
+      founderImage: normalizeDriveImageUrl(config.founderImage),
+      portfolioItems: config.portfolioItems.map(item => ({
+        ...item,
+        thumbnail: normalizeDriveImageUrl(item.thumbnail),
+        fullUrl: normalizeDriveImageUrl(item.fullUrl),
+      })),
+    };
   } catch {
     return { ...DEFAULT_CONFIG, portfolioItems: DEFAULT_CONFIG.portfolioItems.map(item => ({ ...item })) };
   }

@@ -66,7 +66,7 @@ export const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-obsidian flex items-center justify-center px-4">
+    <div className="admin-login-shell min-h-screen bg-obsidian flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-5 flex justify-end">
           <ThemeToggle />

@@ -5,15 +5,20 @@
 @layer base {
   :root {
     color-scheme: light;
-    --sdm-obsidian: 248 246 240;
-    --sdm-dark-surface: 255 254 250;
+    --sdm-obsidian: 247 248 255;
+    --sdm-dark-surface: 255 255 255;
     --sdm-card-surface: 255 255 255;
-    --sdm-border-subtle: 229 224 213;
-    --sdm-gold: 146 96 24;
-    --sdm-gold-light: 182 127 36;
-    --sdm-gold-dark: 111 70 14;
-    --sdm-silver: 100 116 139;
-    --sdm-hero-bottom: 248 246 240;
+    --sdm-border-subtle: 224 226 240;
+    --sdm-gold: 153 85 12;
+    --sdm-gold-light: 190 112 22;
+    --sdm-gold-dark: 112 61 12;
+    --sdm-silver: 83 92 116;
+    --sdm-hero-bottom: 247 248 255;
+  }
+
+  html[data-theme='light'] .light-feature-card.bg-gold\/5 {
+    border-color: rgb(192 112 34 / 0.38);
+    background: linear-gradient(135deg, rgb(255 246 225 / 0.98), rgb(248 244 255 / 0.95));
   }
 
   :root[data-theme='dark'] {
@@ -53,10 +58,11 @@
   body {
     font-family: 'Inter', sans-serif;
     background-color: rgb(var(--sdm-obsidian));
-    color: #202a3b;
+    color: #20243a;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 450ms ease, color 450ms ease;
   }
 
   /* Fix dropdown/select option colors */
@@ -96,7 +102,11 @@
 
 html[data-theme='light'] select option {
   background-color: #FFFFFF;
-  color: #202A3B;
+  color: #20243A;
+}
+
+html[data-theme='light'] :focus-visible {
+  outline-color: #6750A4;
 }
 
 html[data-theme='light'] .text-white {
@@ -199,9 +209,9 @@ html[data-theme='light'] .fixed.inset-0[class*="bg-obsidian/"] {
 }
 
 html[data-theme='light'] .public-navigation {
-  background-color: rgb(255 254 250 / 0.94);
-  border-color: rgb(114 91 51 / 0.12);
-  box-shadow: 0 8px 28px rgb(34 35 42 / 0.08);
+  background-color: rgb(255 255 255 / 0.9);
+  border-color: rgb(103 80 164 / 0.12);
+  box-shadow: 0 8px 28px rgb(34 35 58 / 0.08);
   backdrop-filter: blur(20px);
 }
 
@@ -220,7 +230,7 @@ html[data-theme='light'] .bg-gold .text-obsidian {
 }
 
 html[data-theme='light'] .text-gold-gradient {
-  background-image: linear-gradient(135deg, #F3CB65, #D39322);
+  background-image: linear-gradient(110deg, #9A5A08 5%, #C05C32 52%, #6750A4 100%);
 }
 
 html[data-theme='light'] .theme-menu-line {
@@ -236,8 +246,104 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb {
 }
 
 html[data-theme='light'] ::selection {
-  background: rgb(182 127 36 / 0.24);
-  color: #202A3B;
+  background: rgb(103 80 164 / 0.2);
+  color: #20243A;
+}
+
+html[data-theme='light'] .public-site-shell {
+  background-color: #f7f8ff;
+  background-image:
+    radial-gradient(ellipse at 7% 18%, rgb(101 132 211 / 0.12), transparent 30%),
+    radial-gradient(ellipse at 91% 38%, rgb(238 159 105 / 0.11), transparent 28%),
+    radial-gradient(ellipse at 18% 76%, rgb(68 166 157 / 0.09), transparent 31%),
+    linear-gradient(180deg, #f7f8ff 0%, #fffaf4 48%, #f5f8ff 100%);
+  background-size: 150% 150%;
+  animation: lightAuroraDrift 26s ease-in-out infinite alternate;
+}
+
+html[data-theme='light'] .admin-shell {
+  background-color: #f6f7fc;
+  background-image:
+    radial-gradient(ellipse at 88% 4%, rgb(115 96 184 / 0.1), transparent 27%),
+    radial-gradient(ellipse at 16% 82%, rgb(220 153 86 / 0.1), transparent 30%),
+    linear-gradient(135deg, #f7f8ff, #fffaf5 55%, #f4f8ff);
+}
+
+html[data-theme='light'] .admin-login-shell {
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgb(115 96 184 / 0.18), transparent 32%),
+    radial-gradient(ellipse at 88% 84%, rgb(230 157 83 / 0.16), transparent 30%),
+    linear-gradient(135deg, #f7f8ff, #fffaf4);
+}
+
+html[data-theme='light'] .light-feature-card {
+  border-color: rgb(103 80 164 / 0.15);
+  background: linear-gradient(145deg, rgb(255 255 255 / 0.96), rgb(247 248 255 / 0.92));
+  box-shadow: 0 12px 30px rgb(52 61 103 / 0.08), 0 2px 6px rgb(52 61 103 / 0.04);
+  transition: transform 350ms cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 350ms ease, border-color 350ms ease, background 350ms ease;
+}
+
+html[data-theme='light'] .light-feature-card:hover {
+  border-color: rgb(192 112 34 / 0.34);
+  background: linear-gradient(145deg, #fff 0%, #fff8ec 54%, #f6f5ff 100%);
+  box-shadow: 0 20px 46px rgb(52 61 103 / 0.13), 0 5px 14px rgb(192 112 34 / 0.08);
+}
+
+html[data-theme='light'] .theme-toggle:not([data-theme-contrast]) {
+  color: #39405a;
+  border-color: rgb(103 80 164 / 0.22);
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.96), rgb(241 243 255 / 0.9));
+  box-shadow: 0 4px 14px rgb(52 61 103 / 0.08);
+}
+
+html[data-theme='light'] .theme-toggle:not([data-theme-contrast]):hover {
+  background: linear-gradient(135deg, #fff, #fff3df);
+}
+
+html[data-theme='light'] .public-navigation a:not([href^='tel:']) {
+  color: #414761;
+}
+
+html[data-theme='light'] .public-navigation a:not([href^='tel:']):hover {
+  color: #9a5a08;
+}
+
+html[data-theme='light'] #booking,
+html[data-theme='light'] #academy,
+html[data-theme='light'] #partners,
+html[data-theme='light'] #contact {
+  position: relative;
+  isolation: isolate;
+}
+
+html[data-theme='light'] #booking::before,
+html[data-theme='light'] #academy::before,
+html[data-theme='light'] #partners::before,
+html[data-theme='light'] #contact::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+html[data-theme='light'] #booking::before {
+  background: radial-gradient(ellipse at 94% 30%, rgb(107 127 206 / 0.08), transparent 35%);
+}
+
+html[data-theme='light'] #academy::before {
+  background: radial-gradient(ellipse at 8% 55%, rgb(58 163 151 / 0.09), transparent 36%);
+}
+
+html[data-theme='light'] #partners::before,
+html[data-theme='light'] #contact::before {
+  background: radial-gradient(ellipse at 86% 30%, rgb(229 148 83 / 0.09), transparent 34%);
+}
+
+@keyframes lightAuroraDrift {
+  from { background-position: 0% 0%; }
+  to { background-position: 100% 100%; }
 }
 
 @media (max-width: 640px) {
@@ -249,6 +355,14 @@ html[data-theme='light'] ::selection {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html[data-theme='light'] .public-site-shell {
+    animation: none;
+  }
+
+  html[data-theme='light'] .light-feature-card {
+    transition: none !important;
+  }
+
   html {
     scroll-behavior: auto;
   }
@@ -364,7 +478,9 @@ html[data-theme='light'] ::selection {
 }
 
 .header-brand-logo img {
-  transform: scale(3.1);
+  display: block;
+  transform: none;
+  object-position: center;
 }
 
 .about-section {
