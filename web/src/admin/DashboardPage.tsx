@@ -196,41 +196,42 @@ export const DashboardPage: React.FC = () => {
   };
 
   const stats = [
-    { label: 'Rent Out', value: itemsOut, icon: '📦', color: 'text-orange-400', onClick: () => showOrders('Equipment currently rented out', rentOutOrders) },
-    { label: 'Delivery Today', value: deliveryToday.length, icon: '🚚', color: 'text-blue-400', onClick: () => showOrders('Deliveries scheduled today', deliveryToday) },
-    { label: 'Receive Today', value: receiveToday.length, icon: '📥', color: 'text-green-400', onClick: () => showOrders('Equipment due back today', receiveToday) },
-    { label: 'Asset Stock Overview', value: inventory.length, icon: '🎥', color: 'text-purple-400', onClick: showStockOverview },
-    { label: 'Available Inventory', value: availableUnits, icon: '✅', color: 'text-green-400', onClick: () => showInventory('Available inventory', 'available') },
-    { label: 'Blocked for Future Orders', value: blockedUnits, icon: '🗓️', color: 'text-blue-400', onClick: () => showInventory('Inventory blocked for future orders', 'blocked') },
-    { label: 'Active Orders', value: activeOrders.length, icon: '🔥', color: 'text-green-400', onClick: () => showOrders('Active orders', activeOrders) },
-    { label: 'Overdue Returns', value: overdueOrders.length, icon: '⚠️', color: 'text-red-400', onClick: () => showOrders('Overdue returns', overdueOrders) },
-    { label: 'Pending Payments', value: pendingPayment.length, icon: '💳', color: 'text-yellow-400', onClick: () => showOrders('Pending payments', pendingPayment) },
-    { label: 'Partially Returned', value: partiallyReturned.length, icon: '📥', color: 'text-orange-300', onClick: () => showOrders('Partially returned orders', partiallyReturned) },
-    { label: 'Missing Gear Follow-ups', value: missingFollowUps.length, icon: '🔔', color: 'text-red-300', onClick: () => showOrders('Open missing gear follow-ups', missingFollowUps) },
-    { label: 'Missing / Written Off Stock', value: missingUnits, icon: '⚠️', color: 'text-red-300', onClick: () => showInventory('Missing or written-off gear', 'missing') },
-    { label: 'Customers', value: customers.length, icon: '👥', color: 'text-cyan-400', onClick: showCustomers },
-    { label: 'Online Enquiries', value: onlineEnquiries.length, icon: '🛒', color: 'text-amber-400', onClick: showQuotes },
-    { label: 'Saved Quotations', value: savedQuotations.length, icon: '📄', color: 'text-blue-300', onClick: showSavedQuotations },
-    { label: 'Total Gear Items', value: inventory.length, icon: '🎬', color: 'text-gray-300', onClick: showAllGear },
+    { label: 'Rent Out', value: itemsOut, icon: '↗', tone: 'orange', onClick: () => showOrders('Equipment currently rented out', rentOutOrders) },
+    { label: 'Delivery Today', value: deliveryToday.length, icon: '⇢', tone: 'blue', onClick: () => showOrders('Deliveries scheduled today', deliveryToday) },
+    { label: 'Receive Today', value: receiveToday.length, icon: '↓', tone: 'green', onClick: () => showOrders('Equipment due back today', receiveToday) },
+    { label: 'Asset Stock Overview', value: inventory.length, icon: '◈', tone: 'purple', onClick: showStockOverview },
+    { label: 'Available Inventory', value: availableUnits, icon: '✓', tone: 'green', onClick: () => showInventory('Available inventory', 'available') },
+    { label: 'Blocked for Future Orders', value: blockedUnits, icon: '◷', tone: 'blue', onClick: () => showInventory('Inventory blocked for future orders', 'blocked') },
+    { label: 'Active Orders', value: activeOrders.length, icon: '⚡', tone: 'teal', onClick: () => showOrders('Active orders', activeOrders) },
+    { label: 'Overdue Returns', value: overdueOrders.length, icon: '!', tone: 'red', onClick: () => showOrders('Overdue returns', overdueOrders) },
+    { label: 'Pending Payments', value: pendingPayment.length, icon: '₹', tone: 'amber', onClick: () => showOrders('Pending payments', pendingPayment) },
+    { label: 'Partially Returned', value: partiallyReturned.length, icon: '↩', tone: 'orange', onClick: () => showOrders('Partially returned orders', partiallyReturned) },
+    { label: 'Missing Gear Follow-ups', value: missingFollowUps.length, icon: '!', tone: 'red', onClick: () => showOrders('Open missing gear follow-ups', missingFollowUps) },
+    { label: 'Missing / Written Off Stock', value: missingUnits, icon: '×', tone: 'red', onClick: () => showInventory('Missing or written-off gear', 'missing') },
+    { label: 'Customers', value: customers.length, icon: '◎', tone: 'cyan', onClick: showCustomers },
+    { label: 'Online Enquiries', value: onlineEnquiries.length, icon: '✉', tone: 'amber', onClick: showQuotes },
+    { label: 'Saved Quotations', value: savedQuotations.length, icon: '▤', tone: 'blue', onClick: showSavedQuotations },
+    { label: 'Total Gear Items', value: inventory.length, icon: '◉', tone: 'purple', onClick: showAllGear },
   ];
   const priorityStats = stats.filter(stat => ['Rent Out', 'Delivery Today', 'Receive Today', 'Overdue Returns'].includes(stat.label));
   const businessStats = stats.filter(stat => !priorityStats.includes(stat));
   const renderStats = (items: typeof stats) => (
-    <div className="grid grid-cols-1 min-[360px]:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
       {items.map(stat => (
         <button
           type="button"
           key={stat.label}
           onClick={stat.onClick}
           aria-label={`View details for ${stat.label}`}
-          className="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-left transition-colors hover:border-gold/40 hover:bg-white/[0.05] focus:outline-none focus:ring-2 focus:ring-gold/50 sm:p-5"
+          className={`dashboard-stat-card dashboard-stat-${stat.tone} group relative min-h-[132px] overflow-hidden rounded-2xl border p-4 text-left transition duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/30 sm:min-h-[150px] sm:p-5`}
         >
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-2xl">{stat.icon}</span>
-            <span className="text-[10px] font-medium text-gray-500 opacity-0 transition-opacity group-hover:opacity-100">View →</span>
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <span className="dashboard-stat-icon grid h-10 w-10 place-items-center rounded-xl text-lg font-bold">{stat.icon}</span>
+            <span className="dashboard-stat-hint rounded-full bg-black/10 px-2 py-1 text-[9px] font-medium opacity-70 transition group-hover:opacity-100">Details ↗</span>
           </div>
-          <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
-          <div className="mt-1 text-xs font-medium text-gray-500">{stat.label}</div>
+          <div className="dashboard-stat-value text-3xl font-bold tracking-tight sm:text-4xl">{stat.value}</div>
+          <div className="dashboard-stat-label mt-1 text-[11px] font-semibold leading-4 sm:text-xs">{stat.label}</div>
+          <div className="dashboard-stat-glow pointer-events-none absolute -bottom-10 -right-7 h-24 w-24 rounded-full blur-2xl" />
         </button>
       ))}
     </div>
@@ -241,30 +242,50 @@ export const DashboardPage: React.FC = () => {
   );
 
   return (
-    <div>
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-white mb-2">Dashboard</h1>
-          <p className="text-gray-500 text-sm">Overview of your business at a glance</p>
+    <div className="dashboard-page">
+      <div data-theme-contrast className="dashboard-welcome mb-6 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-950 via-slate-900 to-cyan-950 p-5 shadow-xl shadow-indigo-950/15 sm:mb-8 sm:p-7">
+        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+          <div>
+            <p className="mb-2 flex items-center gap-2 text-xs font-medium text-cyan-100/80">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-white/10 text-sm">☀</span>
+              {today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+            <h1 className="text-2xl font-heading font-bold tracking-tight text-white sm:text-3xl">Good {today.getHours() < 12 ? 'morning' : today.getHours() < 17 ? 'afternoon' : 'evening'}, Admin</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">Here’s your business at a glance. Review today’s gear movements, bookings, and customer activity.</p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-48">
+            <button
+              onClick={createBlankQuotation}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-300 to-sky-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:-translate-y-0.5 hover:from-cyan-200 hover:to-sky-300"
+            >
+              <span aria-hidden="true">＋</span> Create Quotation
+            </button>
+            <Link to="/admin/orders" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.07] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.12]">
+              <span aria-hidden="true">▤</span> Manage Orders
+            </Link>
+          </div>
         </div>
-        <button
-          onClick={createBlankQuotation}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-5 py-3 text-sm font-bold text-obsidian transition-colors hover:bg-gold-light"
-        >
-          <span aria-hidden="true">＋</span> Create Quotation
-        </button>
       </div>
 
-      <AdminCalendar orders={orders} />
-
       <section className="mb-8">
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">Today &amp; immediate attention</h2>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-white sm:text-base">Today at a glance</h2>
+            <p className="mt-1 text-[10px] text-gray-500 sm:text-xs">Tap a card to open its details</p>
+          </div>
+          <span className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.06] px-2.5 py-1 text-[10px] font-semibold text-cyan-200">Live overview</span>
+        </div>
         {renderStats(priorityStats)}
       </section>
       <section className="mb-8">
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">Business snapshot</h2>
+        <div className="mb-3">
+          <h2 className="text-sm font-bold text-white sm:text-base">Business snapshot</h2>
+          <p className="mt-1 text-[10px] text-gray-500 sm:text-xs">Inventory, customers, and requests in one view</p>
+        </div>
         {renderStats(businessStats)}
       </section>
+
+      <AdminCalendar orders={orders} />
 
       <div className="mb-8">
         <Link to="/admin/inventory" className="inline-flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/5 px-4 py-3 text-sm font-medium text-gold hover:bg-gold/10">
