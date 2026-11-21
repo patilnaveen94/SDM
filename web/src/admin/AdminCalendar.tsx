@@ -75,7 +75,7 @@ export const AdminCalendar: React.FC<{ orders: Order[] }> = ({ orders }) => {
   };
 
   return (
-    <section className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6" aria-label="Order and gear activity calendar">
+    <section className="admin-calendar mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-6" aria-label="Order and gear activity calendar">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-heading font-bold text-white">Bookings &amp; gear calendar</h2>

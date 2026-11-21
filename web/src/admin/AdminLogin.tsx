@@ -71,14 +71,16 @@ export const AdminLogin: React.FC = () => {
         <div className="mb-5 flex justify-end">
           <ThemeToggle />
         </div>
-        <div className="text-center mb-8">
+        <div className="mb-8 text-center">
+          <span className="admin-login-mark mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl text-xl font-bold">S</span>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-500">Management workspace</p>
           <h1 className="text-2xl font-heading font-bold text-white">SDM Admin</h1>
           <p className="text-gray-500 text-sm mt-2">
             {setupPassword ? 'Create a password to finish setting up your administrator account' : 'Sign in to manage your business'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 space-y-5">
+        <form onSubmit={handleSubmit} className="admin-login-card space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
           {error && (
             <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
               {error}

@@ -46,9 +46,14 @@ export const AdminLayout: React.FC = () => {
   };
   const SidebarContent = () => (
     <>
-      <div className="p-5 border-b border-white/5">
-        <h1 className="text-lg font-heading font-bold text-gold">SDM Admin</h1>
-        <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Management Panel</p>
+      <div className="admin-brand p-5">
+        <div className="flex items-center gap-3">
+          <span className="admin-brand-mark grid h-10 w-10 place-items-center rounded-xl text-lg font-bold">S</span>
+          <div>
+            <h1 className="text-lg font-heading font-bold text-gold">SDM Admin</h1>
+            <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-gray-500">Management workspace</p>
+          </div>
+        </div>
       </div>
       {legacyBackupAvailable && (
         <div className="mx-3 mt-3 rounded-xl border border-amber-400/20 bg-amber-500/5 p-3">
@@ -59,25 +64,25 @@ export const AdminLayout: React.FC = () => {
           </button>
         </div>
       )}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav aria-label="Admin sections" className="flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map(item => (
           <NavLink
             key={item.path}
             to={item.path}
             onClick={() => setSidebarOpen(false)}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-                isActive && item.path !== '/' ? 'bg-gold/10 text-gold border border-gold/20' : 'text-gray-400 hover:text-white hover:bg-white/5'
+              `admin-nav-link flex items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm font-medium transition-all duration-300 ${
+              isActive && item.path !== '/' ? 'admin-nav-active text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`
             }
           >
-            <span>{item.icon}</span>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/[0.05] text-base">{item.icon}</span>
             {item.label}
           </NavLink>
         ))}
       </nav>
-      <div className="p-3 border-t border-white/5">
-        <button onClick={handleLogout} className="w-full px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/5 border border-white/5 transition-all">
+      <div className="admin-sidebar-footer p-3">
+        <button onClick={handleLogout} className="w-full rounded-xl border border-white/5 px-4 py-2.5 text-sm text-gray-400 transition-all hover:border-rose-400/20 hover:bg-rose-500/5 hover:text-red-400">
           Sign Out
         </button>
       </div>
@@ -87,7 +92,7 @@ export const AdminLayout: React.FC = () => {
   return (
     <div className="admin-shell min-h-screen bg-obsidian">
       {/* Mobile header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-dark-surface/95 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between">
+      <div className="admin-mobile-bar lg:hidden fixed top-0 left-0 right-0 z-40 border-b border-white/5 px-4 py-3 flex items-center justify-between">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-label={sidebarOpen ? 'Close admin navigation' : 'Open admin navigation'}
@@ -114,12 +119,12 @@ export const AdminLayout: React.FC = () => {
       )}
 
       {/* Sidebar */}
-      <aside id="admin-navigation" className={`fixed top-0 left-0 h-full w-64 bg-dark-surface border-r border-white/5 flex flex-col z-40 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+      <aside id="admin-navigation" className={`admin-sidebar fixed top-0 left-0 h-full w-64 border-r border-white/5 flex flex-col z-40 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <SidebarContent />
       </aside>
 
       {/* Main content */}
-      <main className="lg:ml-64 p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 min-h-screen overflow-x-hidden">
+      <main className="admin-content lg:ml-64 p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 min-h-screen overflow-x-hidden">
         {actionError && <p role="alert" className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">{actionError}</p>}
         <div className="mb-4 hidden justify-end lg:mb-5 lg:flex">
           <ThemeToggle />

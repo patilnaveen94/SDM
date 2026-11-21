@@ -450,6 +450,263 @@ html[data-theme='light'] .admin-shell {
     linear-gradient(135deg, #f7f8ff, #fffaf5 55%, #f4f8ff);
 }
 
+.admin-shell {
+  min-height: 100vh;
+  background-color: #0b1220;
+  background-image:
+    radial-gradient(ellipse at 86% 0%, rgb(37 99 235 / 0.1), transparent 28%),
+    radial-gradient(ellipse at 9% 88%, rgb(8 145 178 / 0.08), transparent 30%),
+    linear-gradient(135deg, #0b1220, #101827 54%, #0c1625);
+}
+
+.admin-sidebar {
+  background: linear-gradient(180deg, #0d1728, #101827 46%, #0b1321);
+  border-color: rgb(148 163 184 / 0.12);
+  box-shadow: 14px 0 42px rgb(2 8 23 / 0.18);
+}
+
+.admin-brand {
+  border-bottom: 1px solid rgb(148 163 184 / 0.12);
+}
+
+.admin-brand-mark {
+  color: #082f49;
+  background: linear-gradient(145deg, #67e8f9, #38bdf8 56%, #818cf8);
+  box-shadow: 0 8px 20px rgb(14 165 233 / 0.2);
+}
+
+.admin-nav-link {
+  min-height: 44px;
+}
+
+.admin-nav-active {
+  border-color: rgb(103 232 249 / 0.2);
+  background: linear-gradient(100deg, rgb(8 145 178 / 0.2), rgb(79 70 229 / 0.12));
+  box-shadow: inset 3px 0 0 #67e8f9, 0 5px 16px rgb(8 47 73 / 0.16);
+}
+
+.admin-nav-active > span:first-child {
+  filter: saturate(1.15);
+}
+
+.admin-sidebar-footer {
+  border-top: 1px solid rgb(148 163 184 / 0.12);
+}
+
+.admin-mobile-bar {
+  background: rgb(13 23 40 / 0.92);
+  border-color: rgb(148 163 184 / 0.13);
+  backdrop-filter: blur(18px);
+}
+
+.admin-content {
+  position: relative;
+  isolation: isolate;
+}
+
+.admin-content > .mb-4.hidden {
+  min-height: 42px;
+  align-items: flex-start;
+}
+
+.admin-content h1 {
+  letter-spacing: -0.035em;
+}
+
+.admin-content h2 {
+  letter-spacing: -0.015em;
+}
+
+.admin-content [class*="bg-white/"][class*="rounded-2xl"]:not(.dashboard-stat-card):not(.gear-stat-card):not(.admin-calendar):not(button):not(input):not(select):not(textarea),
+.admin-content [class*="bg-white/"][class*="rounded-xl"]:not(.dashboard-stat-card):not(.gear-stat-card):not(.admin-calendar):not(button):not(input):not(select):not(textarea) {
+  border-color: rgb(148 163 184 / 0.12);
+  background: linear-gradient(145deg, rgb(30 41 59 / 0.62), rgb(15 23 42 / 0.48));
+  box-shadow: 0 12px 30px rgb(2 8 23 / 0.12);
+}
+
+.admin-content [class~="bg-dark-surface"] {
+  background: linear-gradient(145deg, #111e30, #0e1929);
+  border-color: rgb(148 163 184 / 0.15);
+  box-shadow: 0 24px 70px rgb(2 8 23 / 0.4);
+}
+
+.admin-content input:not([type="checkbox"]):not([type="file"]),
+.admin-content select,
+.admin-content textarea {
+  border-color: rgb(148 163 184 / 0.18);
+  border-radius: 0.8rem;
+  background-color: rgb(15 23 42 / 0.55);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.admin-content input:not([type="checkbox"]):not([type="file"]):focus,
+.admin-content select:focus,
+.admin-content textarea:focus {
+  border-color: rgb(103 232 249 / 0.58);
+  box-shadow: 0 0 0 3px rgb(34 211 238 / 0.1);
+}
+
+.admin-content button {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 180ms;
+}
+
+.admin-content button:focus-visible,
+.admin-content a:focus-visible {
+  outline-color: #67e8f9;
+}
+
+.admin-calendar {
+  border-color: rgb(103 232 249 / 0.14);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgb(8 145 178 / 0.08), transparent 40%),
+    linear-gradient(145deg, rgb(17 30 48 / 0.84), rgb(12 22 37 / 0.74));
+  box-shadow: 0 18px 44px rgb(2 8 23 / 0.14);
+}
+
+.admin-calendar button[aria-pressed="true"] {
+  border-color: rgb(103 232 249 / 0.48);
+  background: linear-gradient(145deg, rgb(8 145 178 / 0.2), rgb(79 70 229 / 0.13));
+}
+
+.admin-login-shell {
+  background-color: #0b1220;
+  background-image:
+    radial-gradient(ellipse at 18% 16%, rgb(8 145 178 / 0.18), transparent 34%),
+    radial-gradient(ellipse at 85% 85%, rgb(99 102 241 / 0.16), transparent 32%),
+    linear-gradient(135deg, #0b1220, #111827 56%, #0c1929);
+}
+
+.admin-login-mark {
+  color: #082f49;
+  background: linear-gradient(145deg, #67e8f9, #38bdf8 56%, #818cf8);
+  box-shadow: 0 12px 30px rgb(14 165 233 / 0.22);
+}
+
+.admin-login-card {
+  background: linear-gradient(145deg, rgb(30 41 59 / 0.72), rgb(15 23 42 / 0.72));
+  border-color: rgb(148 163 184 / 0.16);
+  box-shadow: 0 24px 70px rgb(2 8 23 / 0.3);
+}
+
+html[data-theme='light'] .admin-shell {
+  background-image:
+    radial-gradient(ellipse at 85% 0%, rgb(99 102 241 / 0.08), transparent 29%),
+    radial-gradient(ellipse at 8% 90%, rgb(14 165 184 / 0.07), transparent 31%),
+    linear-gradient(135deg, #f6f8fc, #f6f7ff 55%, #f4f9fb);
+}
+
+html[data-theme='light'] .admin-sidebar {
+  background: linear-gradient(180deg, #ffffff, #f7f9ff 58%, #f5f8fc);
+  border-color: rgb(51 65 85 / 0.11);
+  box-shadow: 12px 0 35px rgb(30 41 59 / 0.07);
+}
+
+html[data-theme='light'] .admin-brand,
+html[data-theme='light'] .admin-sidebar-footer {
+  border-color: rgb(51 65 85 / 0.1);
+}
+
+html[data-theme='light'] .admin-nav-active {
+  border-color: rgb(8 145 178 / 0.16);
+  background: linear-gradient(100deg, #E5F8FC, #EEF2FF);
+  box-shadow: inset 3px 0 0 #0891B2, 0 5px 14px rgb(14 116 144 / 0.06);
+  color: #0E7490;
+}
+
+html[data-theme='light'] .admin-mobile-bar {
+  background: rgb(255 255 255 / 0.92);
+  border-color: rgb(51 65 85 / 0.1);
+}
+
+html[data-theme='light'] .admin-content [class*="bg-white/"][class*="rounded-2xl"]:not(.dashboard-stat-card):not(.gear-stat-card):not(.admin-calendar):not(button):not(input):not(select):not(textarea),
+html[data-theme='light'] .admin-content [class*="bg-white/"][class*="rounded-xl"]:not(.dashboard-stat-card):not(.gear-stat-card):not(.admin-calendar):not(button):not(input):not(select):not(textarea) {
+  border-color: rgb(100 116 139 / 0.14);
+  background: linear-gradient(145deg, rgb(255 255 255 / 0.96), rgb(247 249 255 / 0.94));
+  box-shadow: 0 12px 28px rgb(51 65 85 / 0.06);
+}
+
+html[data-theme='light'] .admin-content [class~="bg-dark-surface"] {
+  background: linear-gradient(145deg, #ffffff, #f7f9ff);
+  border-color: rgb(100 116 139 / 0.16);
+  box-shadow: 0 24px 70px rgb(30 41 59 / 0.18);
+}
+
+html[data-theme='light'] .admin-content input:not([type="checkbox"]):not([type="file"]),
+html[data-theme='light'] .admin-content select,
+html[data-theme='light'] .admin-content textarea {
+  border-color: rgb(100 116 139 / 0.2);
+  background-color: rgb(248 250 252 / 0.96);
+}
+
+html[data-theme='light'] .admin-content input:not([type="checkbox"]):not([type="file"]):focus,
+html[data-theme='light'] .admin-content select:focus,
+html[data-theme='light'] .admin-content textarea:focus {
+  border-color: rgb(8 145 178 / 0.55);
+  box-shadow: 0 0 0 3px rgb(8 145 178 / 0.1);
+}
+
+html[data-theme='light'] .admin-content .text-emerald-200,
+html[data-theme='light'] .admin-content .text-emerald-300,
+html[data-theme='light'] .admin-content .text-emerald-400,
+html[data-theme='light'] .admin-content .text-teal-200,
+html[data-theme='light'] .admin-content .text-teal-300,
+html[data-theme='light'] .admin-content .text-teal-400 {
+  color: #047857;
+}
+
+html[data-theme='light'] .admin-content .text-violet-200,
+html[data-theme='light'] .admin-content .text-violet-300,
+html[data-theme='light'] .admin-content .text-violet-400,
+html[data-theme='light'] .admin-content .text-purple-200,
+html[data-theme='light'] .admin-content .text-purple-300 {
+  color: #6D28D9;
+}
+
+html[data-theme='light'] .admin-content .text-cyan-100,
+html[data-theme='light'] .admin-content .text-cyan-200,
+html[data-theme='light'] .admin-content .text-cyan-300,
+html[data-theme='light'] .admin-content .text-sky-200,
+html[data-theme='light'] .admin-content .text-sky-300 {
+  color: #0E7490;
+}
+
+html[data-theme='light'] .admin-content .text-rose-200,
+html[data-theme='light'] .admin-content .text-rose-300,
+html[data-theme='light'] .text-red-200 {
+  color: #BE123C;
+}
+
+html[data-theme='light'] .admin-content .text-amber-200 {
+  color: #A16207;
+}
+
+html[data-theme='light'] .admin-calendar {
+  border-color: rgb(14 116 144 / 0.14);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgb(8 145 178 / 0.05), transparent 40%),
+    linear-gradient(145deg, #ffffff, #f6f8ff);
+  box-shadow: 0 18px 40px rgb(51 65 85 / 0.07);
+}
+
+html[data-theme='light'] .admin-calendar button[aria-pressed="true"] {
+  border-color: rgb(8 145 178 / 0.4);
+  background: linear-gradient(145deg, #E3F7FB, #EEF2FF);
+}
+
+html[data-theme='light'] .admin-login-shell {
+  background-image:
+    radial-gradient(ellipse at 18% 16%, rgb(14 165 184 / 0.12), transparent 34%),
+    radial-gradient(ellipse at 85% 85%, rgb(99 102 241 / 0.11), transparent 32%),
+    linear-gradient(135deg, #f4f8fc, #f7f7ff 56%, #f1f8fb);
+}
+
+html[data-theme='light'] .admin-login-card {
+  border-color: rgb(100 116 139 / 0.16);
+  background: linear-gradient(145deg, rgb(255 255 255 / 0.96), rgb(246 249 255 / 0.96));
+  box-shadow: 0 24px 70px rgb(30 41 59 / 0.1);
+}
+
 html[data-theme='light'] .admin-login-shell {
   background-image:
     radial-gradient(ellipse at 15% 15%, rgb(115 96 184 / 0.18), transparent 32%),
