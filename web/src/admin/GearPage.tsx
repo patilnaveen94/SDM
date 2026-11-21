@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getGearInventory, addGearItem, updateGearItem, deleteGearItem, GearItem } from '../store/dataStore';
-import { uploadPublicMediaImage } from '../store/mediaUpload';
+import { normalizeDriveImageUrl, uploadPublicMediaImage } from '../store/mediaUpload';
 
 const emptyForm: Omit<GearItem, 'id'> = {
   name: '',
@@ -37,6 +37,7 @@ export const GearPage: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [formError, setFormError] = useState('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imagePreviewFailed, setImagePreviewFailed] = useState(false);
 
   const refresh = () => setGear(getGearInventory());
 
@@ -44,6 +45,7 @@ export const GearPage: React.FC = () => {
     setForm(emptyForm);
     setSpecsInput('');
     setFormError('');
+    setImagePreviewFailed(false);
     setEditingId(null);
     setShowForm(true);
   };
@@ -52,6 +54,7 @@ export const GearPage: React.FC = () => {
     setForm(item);
     setSpecsInput(item.specs.join(', '));
     setFormError('');
+    setImagePreviewFailed(false);
     setEditingId(item.id);
     setShowForm(true);
   };
@@ -67,7 +70,7 @@ export const GearPage: React.FC = () => {
       return;
     }
     const specs = specsInput.split(',').map(s => s.trim()).filter(Boolean);
-    const data = { ...form, serialNumber: serialNumber || undefined, specs };
+    const data = { ...form, image: normalizeDriveImageUrl(form.image), serialNumber: serialNumber || undefined, specs };
     if (editingId) {
       updateGearItem(editingId, data);
     } else {
@@ -84,6 +87,7 @@ export const GearPage: React.FC = () => {
     try {
       const { url } = await uploadPublicMediaImage(file);
       setForm(current => ({ ...current, image: url }));
+      setImagePreviewFailed(false);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Could not upload this image.');
     } finally {
@@ -183,9 +187,17 @@ export const GearPage: React.FC = () => {
                 Upload image from this device
                 <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={isUploadingImage} onChange={e => { void handleImageUpload(e.target.files?.[0]); e.currentTarget.value = ''; }} className="mt-2 block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gold/10 file:px-3 file:py-2 file:font-semibold file:text-gold" />
               </label>
-              <input placeholder="Image URL" value={form.image} onChange={e => setForm({...form, image: e.target.value})} className={inputCls} />
+              <input
+                type="url"
+                placeholder="Image URL or public Google Drive link"
+                value={form.image}
+                onChange={e => { setForm({...form, image: e.target.value}); setImagePreviewFailed(false); }}
+                className={inputCls}
+              />
+              <p className="text-[10px] leading-5 text-gray-500">Paste a direct image URL or a Google Drive link shared as “Anyone with the link”. Direct image URLs work best.</p>
               {isUploadingImage && <p className="text-xs text-gray-400">Uploading image…</p>}
-              {form.image && <img src={form.image} alt="Gear preview" className="h-28 w-full rounded-xl object-cover" />}
+              {form.image && !imagePreviewFailed && <img src={normalizeDriveImageUrl(form.image)} alt="Gear preview" onError={() => setImagePreviewFailed(true)} className="h-28 w-full rounded-xl object-cover" />}
+              {imagePreviewFailed && <p role="alert" className="text-xs text-amber-300">This image could not be previewed. Check that the link is public and points to an image.</p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input type="number" placeholder="Total Stock" value={form.totalStock || ''} onChange={e => setForm({...form, totalStock: Number(e.target.value)})} className={inputCls} />
                 <input type="number" placeholder="Currently Rented" value={form.currentlyRented || ''} onChange={e => setForm({...form, currentlyRented: Number(e.target.value)})} className={inputCls} />
